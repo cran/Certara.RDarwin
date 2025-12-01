@@ -1,69 +1,168 @@
-test_that("Setting tlag, add duration, Omega searched",
-          {
-            TestFolder <- tempdir()
+test_that(
+  "Dosepoint: Set tlag(Searched), duration(StParm/Expression with StParm), Omega searched",
+  {
+    TestFolder <- tempdir()
 
-            modelPMLCodes <- get_PMLParametersSets(
-              CompartmentsNumber = 1,
-              Parameterization = "Clearance",
-              Saturation = c(TRUE, FALSE),
-              Absorption = "First-Order",
-              EliminationCpt = c(TRUE, FALSE)
-            )
+    modelPMLCodes <- create_ModelPK(
+      CompartmentsNumber = 1,
+      Parameterization = "Clearance",
+      Saturation = c(TRUE, FALSE),
+      Absorption = "First-Order",
+      EliminationCpt = c(TRUE, FALSE)
+    )
 
-            stparm_Tlag <- StParm("Tlag", State = "Searched")
+    modelPMLCodes <-
+      modify_Dosepoint(
+        modelPMLCodes,
+        DosepointName = "Aa",
+        tlag = StParm("Tlag", State = "Searched"),
+        PMLStructures = c("PK1FOC", "PK1FOCSE")
+      )
 
-            modelPMLCodes$PK1FOC$MainDosepoint$Aa$tlag <-
-              stparm_Tlag
-            modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$tlag <-
-              stparm_Tlag
-            modelPMLCodes$PK1FOCSE$Observations$CObs$ResetObs <-
-              FALSE
-            modelPMLCodes$PK1FOCSE$StParms$V$OmegaStParm$State <-
-              "Searched"
-            modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$duration <-
-              StParm("D")
-            modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration <-
-              "DColumn"
+    # Modify observation for one structure
+    modelPMLCodes <-
+      modify_Observation(
+        modelPMLCodes,
+        ObservationName = "CObs",
+        ResetObs = FALSE,
+        PMLStructures = "PK1FOCSE"
+      )
 
-            TemplateFilePath <-
-              file.path(TestFolder, "template.txt")
-            TokensFilePath <-
-              file.path(TestFolder, "tokensTlagDuration.json")
-            DataFilePath <-
-              file.path(TestFolder, "OneCpt_OralBolus.csv")
-            write.csv(
-              data.frame(
-                ID = "ID",
-                time = "time",
-                Dose = "Dose",
-                CObs = "CObs",
-                DColumn = "DColumn"
-              ),
-              DataFilePath
-            )
+    # Modify Omega state for nV in one structure
+    modelPMLCodes <-
+      modify_Omega(
+        modelPMLCodes,
+        Name = "nV",
+        # Assumes nV exists from create_ModelPK
+        State = "Searched",
+        PMLStructures = c("PK1FOCSE")
+      )
 
-            output <-
-              write_ModelTemplateTokens(
-                TemplateFilePath = TemplateFilePath,
-                TokensFilePath = TokensFilePath,
-                Description = "SearchElimTypeTlag",
-                Author = "Certara",
-                DataFilePath = DataFilePath,
-                DataMapping = c(
-                  id = "ID",
-                  time = "time",
-                  Aa = "Dose",
-                  CObs = "CObs",
-                  DColumn = "DColumn"
-                ),
-                PMLParametersSets = modelPMLCodes,
-                OmegaSearchBlocks = list(c("nKa", "nV", "nD"))
-              )
+    # Modify duration using StParm("D") for PK1FOCSE
+    modelPMLCodes <-
+      modify_Dosepoint(
+        modelPMLCodes,
+        DosepointName = "Aa",
+        duration = StParm("D"),
+        PMLStructures = c("PK1FOCSE")
+      )
 
-            output$Template$DATA <- NULL
-            testthat::expect_snapshot_output(cat(unlist(output$Template), sep = "\n"))
-            testthat::expect_snapshot_value(output$TokensList, style = "json2")
-          })
+    # Define the StParm for Rate needed in the expression for PK1FOC
+    RateStParm <- StParm(
+      StParmName = "Rate",
+      OmegaStParm = Omega(Name = "nRate", State = "None"),
+      # Provide Name even if State is None
+      ThetaStParm = Theta(Name = "tvRate", InitialEstimates = InitialEstimate(c(0, 1, Inf))) # Provide Name
+    )
+
+    # Modify duration using Expression("1/Rate") for PK1FOC
+    modelPMLCodes <-
+      modify_Dosepoint(
+        modelPMLCodes,
+        DosepointName = "Aa",
+        duration = Expression("1/Rate",
+                              ContainedStParms = list(RateStParm)),
+        PMLStructures = "PK1FOC"
+      )
+
+    # --- Verification ---
+    testthat::expect_s3_class(modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration,
+                              "Expression")
+    testthat::expect_equal(modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ExpressionText,
+                           "1/Rate")
+    testthat::expect_equal(length(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms
+    ),
+    1)
+    testthat::expect_equal(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms[[1]]$StParmName,
+      "Rate"
+    )
+    # Check the Theta/Omega names within RateStParm
+    testthat::expect_equal(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms[[1]]$ThetaStParm$Name,
+      "tvRate"
+    )
+    testthat::expect_equal(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms[[1]]$OmegaStParm$Name,
+      "nRate"
+    )
+    testthat::expect_equal(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms[[1]]$OmegaStParm$State,
+      "None"
+    )
+    testthat::expect_equal(
+      modelPMLCodes$PK1FOC$MainDosepoint$Aa$duration$ContainedStParms[[1]]$ThetaStParm$InitialEstimates$Lower,
+      0
+    )
+
+    testthat::expect_s3_class(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$duration,
+                              "StParm")
+    testthat::expect_equal(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$duration$StParmName,
+                           "D")
+    # Check implicitly created names using the REAL constructors
+    testthat::expect_equal(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$duration$ThetaStParm$Name,
+                           "tvD")
+    testthat::expect_equal(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$duration$OmegaStParm$Name,
+                           "nD")
+
+    testthat::expect_s3_class(modelPMLCodes$PK1FOC$MainDosepoint$Aa$tlag, "StParm")
+    testthat::expect_equal(modelPMLCodes$PK1FOC$MainDosepoint$Aa$tlag$State,
+                           "Searched")
+    # Check implicitly created names using the REAL constructors
+    testthat::expect_equal(modelPMLCodes$PK1FOC$MainDosepoint$Aa$tlag$ThetaStParm$Name,
+                           "tvTlag")
+    testthat::expect_equal(modelPMLCodes$PK1FOC$MainDosepoint$Aa$tlag$OmegaStParm$Name,
+                           "nTlag")
+
+    testthat::expect_s3_class(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$tlag, "StParm")
+    testthat::expect_equal(modelPMLCodes$PK1FOCSE$MainDosepoint$Aa$tlag$State,
+                           "Searched")
+
+    testthat::expect_equal(modelPMLCodes$PK1FOCSE$StParms$V$OmegaStParm$State,
+                           "Searched") # Assumes V StParm exists
+
+
+    # --- Snapshot Generation ---
+    TemplateFilePath <-
+      file.path(TestFolder, "template_test1_v4.txt") # Incremented version
+    TokensFilePath <-
+      file.path(TestFolder, "tokens_test1_v4.json")   # Incremented version
+    DataFilePath <-
+      file.path(TestFolder, "Data_test1_v4.csv")     # Incremented version
+    write.csv(
+      data.frame(
+        ID = "ID",
+        time = "time",
+        AaDose = "AaDose",
+        CObs = "CObs"
+      ),
+      DataFilePath,
+      row.names = FALSE
+    )
+
+    output <-
+      write_ModelTemplateTokens(
+        TemplateFilePath = TemplateFilePath,
+        TokensFilePath = TokensFilePath,
+        Description = "Test1v4: Search Tlag, diff durations(Expr/StParm), search nV",
+        Author = "Certara",
+        DataFilePath = DataFilePath,
+        DataMapping = c(
+          ID = "ID",
+          time = "time",
+          Aa = "AaDose",
+          CObs = "CObs"
+        ),
+        PMLParametersSets = modelPMLCodes,
+        OmegaSearchBlocks = list(c("nKa", "nV", "nD", "nTlag")) # nRate has State=None, so shouldn't be in search block
+      )
+
+    output$Template$DATA <- NULL
+    testthat::expect_snapshot_output(cat(unlist(output$Template), sep = "\n"))
+    testthat::expect_snapshot_value(output$TokensList, style = "json2")
+  }
+)
 
 test_that("Covariates searched on Cl and V: Sex",
           {
@@ -73,26 +172,15 @@ test_that("Covariates searched on Cl and V: Sex",
               get_PMLParametersSets(CompartmentsNumber = 2,
                                     Parameterization = "Clearance")
 
-            CatCov_Sex_Cl <- Covariate(
-              Name = "Sex",
-              StParmName = "Cl",
-              Type = "Categorical",
-              State = "Searched",
-              Categories = c(0, 1)
-            )
-
-            CatCov_Sex_V <- Covariate(
-              Name = "Sex",
-              StParmName = "V",
-              Type = "Categorical",
-              State = "Searched",
-              Categories = c(0, 1)
-            )
-
-            modelPMLCodes$PK2IVC$StParms$Cl$Covariates <-
-              c(Sex = list(CatCov_Sex_Cl))
-            modelPMLCodes$PK2IVC$StParms$V$Covariates <-
-              c(Sex = list(CatCov_Sex_V))
+            modelPMLCodes <-
+              add_Covariate(
+                modelPMLCodes,
+                Name = "Sex",
+                Type = "Categorical",
+                StParmNames = c("Cl", "V"),
+                State = "Searched",
+                Categories = c(0, 1)
+              )
 
             TemplateFilePath <-
               file.path(TestFolder, "template.txt")
@@ -149,8 +237,16 @@ test_that("Absorption types: Zero-Order, Gaussian, Inverse Gaussian, and Weibull
                 Saturation = TRUE,
                 Absorption = c("Intravenous", "Inverse Gaussian", "Gamma", "Weibull")
               )
-            modelPMLCodes$PK1IVCS$MainDosepoint$A1$duration <-
-              StParm("D", State = "Searched")
+
+            # modelPMLCodes$PK1IVCS$MainDosepoint$A1$duration <-
+            #   StParm("D", State = "Searched")
+            modelPMLCodes <-
+              modify_Dosepoint(
+                modelPMLCodes,
+                DosepointName = "A1",
+                duration = StParm("D", State = "Searched"),
+                PMLStructures = "PK1IVCS"
+              )
 
             TemplateFilePath <-
               file.path(TestFolder, "template.txt")
@@ -327,7 +423,6 @@ test_that("Covariates searched ",
                 EstArgs = specify_EngineParams(
                   method = "QRPEM",
                   ODE = "AutoDetect",
-                  tDOF = 3L,
                   numSampleSIR = 15L,
                   numBurnIn = 1L,
                   freezeOmega = FALSE,
@@ -574,6 +669,124 @@ test_that("StParms in Sigmas correctly named ",
                 EstArgs = specify_EngineParams(numIterations = 10)
               )
 
+
+            output$Template$DATA <- NULL
+            testthat::expect_snapshot_output(cat(unlist(output$Template), sep = "\n"))
+            testthat::expect_snapshot_value(output$TokensList, style = "json2")
+          })
+
+test_that("Dosepoint: Expression class usage (text, multi-StParm, math, states)",
+          {
+            TestFolder <- tempdir()
+
+            modelPMLCodes <- create_ModelPK(
+              CompartmentsNumber = 1,
+              Parameterization = "Clearance",
+              Absorption = "First-Order" # Gives PK1FOC with dosepoint Aa
+            )
+
+            # Define StParms needed for expressions
+            F1_stparm <-
+              StParm(
+                StParmName = "F1",
+                ThetaStParm = Theta(Name = "tvF1", InitialEstimates = 0.8)
+              )
+            F2_stparm <-
+              StParm(
+                StParmName = "F2",
+                ThetaStParm = Theta(Name = "tvF2", InitialEstimates = 0.9)
+              )
+            BaseRate_stparm <-
+              StParm(
+                StParmName = "BaseRate",
+                ThetaStParm = Theta(Name = "tvBaseRate", InitialEstimates = 5)
+              )
+
+            # Modify the 'Aa' dosepoint using various Expressions in one call
+            modelPMLCodes <-
+              modify_Dosepoint(
+                PMLParametersSets = modelPMLCodes,
+                DosepointName = "Aa",
+                PMLStructures = "PK1FOC",
+                # Apply only to this structure
+
+                # 1. tlag: Simple text expression
+                tlag = Expression("1"),
+                # State defaults to "Present"
+
+                # 2. bioavail: Expression with multiple StParms, State = Searched
+                bioavail = Expression(
+                  "F1 * F2",
+                  ContainedStParms = list(F1_stparm, F2_stparm),
+                  State = "Searched"
+                ),
+
+                # 3. rate: Expression with math on an StParm
+                rate = Expression("BaseRate / 2",
+                                  ContainedStParms = list(BaseRate_stparm)) # State defaults to "Present"
+              )
+
+            # --- Verification
+            modified_dosepoint <- modelPMLCodes$PK1FOC$MainDosepoint$Aa
+
+            # Check tlag
+            testthat::expect_s3_class(modified_dosepoint$tlag, "Expression")
+            testthat::expect_equal(modified_dosepoint$tlag$ExpressionText, "1")
+            testthat::expect_equal(length(modified_dosepoint$tlag$ContainedStParms), 0)
+
+            # Check bioavail
+            testthat::expect_s3_class(modified_dosepoint$bioavail, "Expression")
+            testthat::expect_equal(modified_dosepoint$bioavail$ExpressionText, "F1 * F2")
+            testthat::expect_equal(modified_dosepoint$bioavail$State, "Searched")
+            testthat::expect_equal(length(modified_dosepoint$bioavail$ContainedStParms), 2)
+            testthat::expect_equal(modified_dosepoint$bioavail$ContainedStParms[[1]]$StParmName,
+                                   "F1")
+            testthat::expect_equal(modified_dosepoint$bioavail$ContainedStParms[[2]]$StParmName,
+                                   "F2")
+
+            # Check rate
+            testthat::expect_s3_class(modified_dosepoint$rate, "Expression")
+            testthat::expect_equal(modified_dosepoint$rate$ExpressionText, "BaseRate / 2")
+            testthat::expect_equal(modified_dosepoint$rate$State, "Present")
+            testthat::expect_equal(length(modified_dosepoint$rate$ContainedStParms), 1)
+            testthat::expect_equal(modified_dosepoint$rate$ContainedStParms[[1]]$StParmName,
+                                   "BaseRate")
+
+            # --- Snapshot Generation ---
+            TemplateFilePath <-
+              file.path(TestFolder, "template_expr_test.txt")
+            TokensFilePath <- file.path(TestFolder, "tokens_expr_test.json")
+            DataFilePath <- file.path(TestFolder, "Data_expr_test.csv")
+            # Create dummy CSV content
+            write.csv(
+              data.frame(
+                ID = "ID",
+                time = "time",
+                AaDose = "AaDose",
+                CObs = "CObs",
+                TlagColumn = "TlagColumn" # Column needed for tlag expression
+              ),
+              DataFilePath,
+              row.names = FALSE
+            )
+
+            output <-
+              write_ModelTemplateTokens(
+                TemplateFilePath = TemplateFilePath,
+                TokensFilePath = TokensFilePath,
+                Description = "Test Expression class in Dosepoint",
+                Author = "Certara",
+                DataFilePath = DataFilePath,
+                DataMapping = c(
+                  ID = "ID",
+                  time = "time",
+                  Aa = "AaDose",
+                  CObs = "CObs",
+                  TlagColumn = "TlagColumn" # Map the column for tlag
+                ),
+                PMLParametersSets = modelPMLCodes,
+                OmegaSearchBlocks = list() # Keep simple for this test focus
+              )
 
             output$Template$DATA <- NULL
             testthat::expect_snapshot_output(cat(unlist(output$Template), sep = "\n"))

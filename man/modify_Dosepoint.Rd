@@ -20,17 +20,21 @@ instance).}
 
 \item{DosepointName}{A character string giving the name of the Dosepoint.}
 
-\item{tlag}{An optional structural parameter giving the time lag for the
-doses coming into current Dosepoint.}
+\item{tlag}{An optional parameter for the time lag. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{bioavail}{An optional structural parameter giving the bioavailability
-of the doses coming into current Dosepoint.}
+\item{bioavail}{An optional parameter for bioavailability. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{duration}{An optional structural parameter giving the duration of
-infusion for the doses coming into current Dosepoint.}
+\item{duration}{An optional parameter for the duration of infusion. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{rate}{An optional structural parameter giving the rate of infusion for
-the doses coming into current Dosepoint.}
+\item{rate}{An optional parameter for the rate of infusion. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
 \item{PMLStructures}{Character or character vector specifying names of PML
 structures in which the dosepoint statement will be modified. For the
@@ -61,10 +65,11 @@ PMLParametersSetsVMod <-
 
 }
 \seealso{
-\code{\link[=list_Dosepoints]{list_Dosepoints()}}
+\code{\link[=list_Dosepoints]{list_Dosepoints()}}, \code{\link[=add_Dosepoint]{add_Dosepoint()}}
 
 Functions used for Dosepoint specification: 
 \code{\link{Dosepoint}()},
+\code{\link{add_Dosepoint}()},
 \code{\link{create_ModelPK}()}
 }
 \concept{Dosepoints}

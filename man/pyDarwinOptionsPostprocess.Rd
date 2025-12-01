@@ -19,22 +19,30 @@ will be used to execute the post-processing script specified in
 
 \item{post_run_r_code}{Character: The file path to the R script that contains
 post-processing code. This script will be executed after the pyDarwin
-optimization process finishes. It can perform additional analysis or
-manipulations on the generated results.}
+optimization process finishes.
+For NSGA-III (MOGA with 3 objectives), the R script must return a list
+containing two vectors: the first for objectives, the second for constraints
+(empty vector if no constraints). For other cases, it should return a
+vector containing a penalty value and a text string.
+Default: "\{project_dir\}/simplefunc.R".}
 
 \item{r_timeout}{Numeric: The time limit (in seconds) for the execution of
 the post-processing R script. If the R script takes longer to execute than
-this timeout value, it will be terminated. Default: 30}
+this timeout value, it will be terminated. Default: 30.}
 
 \item{use_python}{Logical: Whether to use Python for postprocessing. If set
 to TRUE, Python will be used to execute the post-processing script
-specified in \code{post_run_python_code}. Default: FALSE}
+specified in \code{post_run_python_code}. Default: FALSE.}
 
 \item{post_run_python_code}{Character: The file path to the Python script
-that contains post-processing code. This script will be executed after the
-pyDarwin optimization process finishes. It can perform additional analysis
-or manipulations on the generated results. Default:
-\{project_dir\}/simplefunc.py}
+that contains post-processing code.
+The script must contain a function \code{post_process(run_dir_path)} or
+\code{post_process2(model_run_object)}.
+For NSGA-III (MOGA with 3 objectives), this function must return a tuple of
+two lists: the first for objectives, the second for constraints (empty list
+if no constraints). For other cases, it should return a tuple containing a
+penalty value and a text string.
+Default: "\{project_dir\}/simplefunc.py".}
 }
 \value{
 A list of postprocessing options in pyDarwin optimization process.
@@ -46,6 +54,7 @@ optimization process.
 \examples{
 # Create postprocess options with default values
 postprocess_options <- pyDarwinOptionsPostprocess()
+
 # Create postprocess options with custom values
 postprocess_options_custom <-
   pyDarwinOptionsPostprocess(use_r = TRUE,

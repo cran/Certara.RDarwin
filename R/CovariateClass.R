@@ -233,7 +233,8 @@ validate_Covariate <- function(CovariateInstance) {
 #' @param Categories A numeric vector representing the categories (at least two)
 #'   of the covariate. Applicable only if `Type` is either `Occasion` or
 #'   `Categorical`. The first category is set to the reference category for
-#' categorical covariate.
+#'   categorical covariate. If a named vector is used, the names are used as
+#'   labels for the given dataset,
 #' @param Thetas A list of Theta objects representing  Thetas covariate effects.
 #'   Only applicable if `Type` is either `Categorical` or `Continuous`.
 #'   If `Type == "Continuous"`, one Theta corresponding to current Covariate

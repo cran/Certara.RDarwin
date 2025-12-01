@@ -7,7 +7,30 @@
 #'   the specified options.
 #'
 #' @family Dosepoints
-#' @noRd
+#' @seealso [list_Dosepoints()], [modify_Dosepoint()]
+#'
+#' @examples
+#' PMLParametersSets <-
+#'   create_ModelPK(CompartmentsNumber = c(1, 2, 3),
+#'                  Absorption = c("First-Order"))
+#'
+#' # modify dosepoint
+#' PMLParametersSets <-
+#'   modify_Dosepoint(PMLParametersSets,
+#'                    DosepointName = "Aa",
+#'                    tlag = StParm(StParmName = "Tlag",
+#'                                  State = "Present"),
+#'                    bioavail = StParm(StParmName = "F",
+#'                                      State = "Present"))
+#'
+#' # add dosepoint
+#' PMLParametersSets <-
+#'  add_Dosepoint(PMLParametersSets,
+#'                DosepointName = "A1",
+#'                bioavail = Expression("1 - F"),
+#'                duration = Expression("Tlag"))
+#'
+#' @export
 add_Dosepoint <- function(PMLParametersSets,
                           DosepointName = "A1",
                           State = "Present",
@@ -47,7 +70,7 @@ add_Dosepoint <- function(PMLParametersSets,
 #'   `create_ModelPK()`).
 #'
 #' @family Dosepoints
-#' @seealso [list_Dosepoints()]
+#' @seealso [list_Dosepoints()], [add_Dosepoint()]
 #'
 #' @examples
 #' PMLParametersSets <-
@@ -194,6 +217,40 @@ modify_Dosepoint <- function(PMLParametersSets,
         )
     } else {
       # add_Dosepoint used and current dosepoint is not presented
+      if (PMLParametersSets[[PMLStructure]]$Type == "PK") {
+        Compartments <-
+          paste0("A",
+                 1:PMLParametersSets[[PMLStructure]]$CompartmentsNumber)
+
+        if (PMLParametersSets[[PMLStructure]]$Absorption == "First-Order") {
+          Compartments <- c(Compartments, "Aa")
+        }
+
+        if (!grepl(paste(Compartments, collapse = "|"), DosepointName)) {
+          warning(
+            "DosepointName '",
+            DosepointName,
+            "' does not match any of the default compartments in the current space '",
+            PMLStructure,
+            "'.\n",
+            "Default compartments are: ",
+            paste(Compartments, collapse = ", "),
+            "\nPlease recheck if it is intended.",
+            call. = FALSE
+          )
+        }
+      } else if (PMLParametersSets[[PMLStructure]]$Type == "PD") {
+        warning(
+          "Dosepoint '",
+          DosepointName,
+          "' is not applicable to pharmacodynamic types of spaces, i.e. '",
+          PMLStructure,
+          "'.\nPlease recheck if it is intended.",
+          call. = FALSE
+        )
+      }
+
+
       DosepointToAdd <-
         Dosepoint(
           DosepointName = DosepointName,

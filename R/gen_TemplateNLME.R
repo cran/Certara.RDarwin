@@ -39,25 +39,24 @@ gen_TemplateNLME <- function(Description = "",
   ModelTemplate["DATA"] <-
     paste("##DATA", paste0("{data_dir}/", basename(DataFilePath)))
 
-  if (any(sapply(PMLParametersSets, function(x) x$Type == "Custom"))) {
-    ModelTemplate["MAP"] <- paste(
-      "##MAP",
-      gen_MAPCustom(
-        Mapping = DataMapping,
-        PMLParametersSets = PMLParametersSets,
-        DataFilePath = DataFilePath
-      )
-    )
+  if (is.list(DataMapping)) {
+    MappingFunction <- "gen_MAPList"
+  } else if (any(sapply(PMLParametersSets, function(x)
+    x$Type == "Custom"))) {
+    MappingFunction <- "gen_MAPCustom"
   } else {
-    ModelTemplate["MAP"] <- paste(
-      "##MAP",
-      gen_MAP(
-        Mapping = DataMapping,
-        PMLParametersSets = PMLParametersSets,
-        DataFilePath = DataFilePath
-      )
-    )
+    MappingFunction <- "gen_MAP"
   }
+
+  ModelTemplate["MAP"] <- paste("##MAP",
+                                do.call(
+                                  MappingFunction,
+                                  list(
+                                    Mapping = DataMapping,
+                                    PMLParametersSets = PMLParametersSets,
+                                    DataFilePath = DataFilePath
+                                  )
+                                ))
 
   if (nchar(ColDef) > 0) {
     ModelTemplate["COLDEF"] <-

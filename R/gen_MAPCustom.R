@@ -15,6 +15,7 @@ gen_MAPCustom <- function(Mapping,
 
   # treat empty model terms
   MappingNames <- names(Mapping)
+
   EmptyModelNamesFlag <-
     is.null(MappingNames) |
     is.na(MappingNames) |
@@ -33,6 +34,16 @@ gen_MAPCustom <- function(Mapping,
         paste(Mapping[!Mapping %in% DataNames], collapse = ", ")
       )
     }
+  }
+
+  if (any(duplicated(Mapping))) {
+    stop("Duplicated model terms in mapping: ",
+         paste(Mapping[duplicated(Mapping)], collapse = ", "))
+  }
+
+  if (any(duplicated(MappingNames))) {
+    stop("Duplicated column names in mapping: ",
+         paste(MappingNames[duplicated(MappingNames)], collapse = ", "))
   }
 
   # we will create a separate map for each space
@@ -151,7 +162,7 @@ gen_MAPCustom <- function(Mapping,
         # are there _Duration or _Rate for this dosepoint?
         PMLMAPSet[SpaceName] <-
           .map_RateDuration(
-            Dosepointname = MainDosepointName,
+            DosepointName = MainDosepointName,
             Rate = paste0(MainDosepointName, "_Rate"),
             Duration = paste0(MainDosepointName, "_Duration"),
             Mapping = CurrentMapRowMapping,
@@ -193,7 +204,7 @@ gen_MAPCustom <- function(Mapping,
           # are there _Duration or _Rate for this dosepoint?
           PMLMAPSet[SpaceName] <-
             .map_RateDuration(
-              Dosepointname = MainDosepointName,
+              DosepointName = MainDosepointName,
               Rate = paste0(MainDosepointName, "_Rate"),
               Duration = paste0(MainDosepointName, "_Duration"),
               Mapping = CurrentMapRowMapping,
@@ -206,7 +217,7 @@ gen_MAPCustom <- function(Mapping,
           # are there _Duration or _Rate for this dosepoint?
           PMLMAPSet[SpaceName] <-
             .map_RateDuration(
-              Dosepointname = MainDosepointName,
+              DosepointName = MainDosepointName,
               Rate = "Rate",
               Duration = "Duration",
               Mapping = CurrentMapRowMapping,
@@ -251,7 +262,7 @@ gen_MAPCustom <- function(Mapping,
             length(PMLParametersSet$MainDosepoint[[DosepointName]]$duration) == 0) {
           PMLMAPSet[SpaceName] <-
             .map_RateDuration(
-              Dosepointname = DosepointName,
+              DosepointName = DosepointName,
               Rate = paste0(DosepointName, "_Rate"),
               Duration = paste0(DosepointName, "_Duration"),
               Mapping = CurrentMapRowMapping,

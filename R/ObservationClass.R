@@ -19,9 +19,7 @@
 #' @noRd
 #' @keywords internal NLME
 new_Observation <- function(ObservationName = "",
-                            SigmasChosen = Sigmas(
-                              Proportional = 0.1
-                            ),
+                            SigmasChosen = Sigmas(Proportional = 0.1),
                             BQL = FALSE,
                             BQLValue = NA,
                             Frozen = FALSE,
@@ -32,36 +30,47 @@ new_Observation <- function(ObservationName = "",
 
   if (!inherits(SigmasChosen, "Sigmas")) {
     SigmasChosen <-
-      Sigmas(Additive = SigmasChosen[["Additive"]],
-             LogAdditive = SigmasChosen[["LogAdditive"]],
-             Proportional = SigmasChosen[["Proportional"]],
-             AdditiveMultiplicative = list(PropPart = SigmasChosen$AdditiveMultiplicative["PropPart"],
-                                        AddPart = SigmasChosen$AdditiveMultiplicative["AddPart"]),
-             MixRatio = list(PropPart = SigmasChosen$MixRatio["PropPart"],
-                          AddPart = SigmasChosen$MixRatio["AddPart"]),
-             Power = list(PowerPart = SigmasChosen$Power["Power"],
-                       StdevPart = SigmasChosen$Power["Stdev"]),
-             ObservationName = ObservationName
+      Sigmas(
+        Additive = SigmasChosen[["Additive"]],
+        LogAdditive = SigmasChosen[["LogAdditive"]],
+        Proportional = SigmasChosen[["Proportional"]],
+        AdditiveMultiplicative = list(
+          PropPart = SigmasChosen$AdditiveMultiplicative["PropPart"],
+          AddPart = SigmasChosen$AdditiveMultiplicative["AddPart"]
+        ),
+        MixRatio = list(
+          PropPart = SigmasChosen$MixRatio["PropPart"],
+          AddPart = SigmasChosen$MixRatio["AddPart"]
+        ),
+        Power = list(
+          PowerPart = SigmasChosen$Power["Power"],
+          StdevPart = SigmasChosen$Power["Stdev"]
+        ),
+        ObservationName = ObservationName
       )
   } else if (SigmasChosen$ObservationName == "") {
     # need to rebuild to get valid stparmnames
     SigmasChosen$ObservationName <- ObservationName
 
     SigmasChosen <-
-      .update_SigmasNames(SigmasChosen = SigmasChosen,
-                          SigmaType = "AdditiveMultiplicative",
-                          PropNameDefault = "MultStdev",
-                          ObservationName = ObservationName)
+      .update_SigmasNames(
+        SigmasChosen = SigmasChosen,
+        SigmaType = "AdditiveMultiplicative",
+        PropNameDefault = "MultStdev",
+        ObservationName = ObservationName
+      )
     SigmasChosen <-
-      .update_SigmasNames(SigmasChosen = SigmasChosen,
-                          SigmaType = "MixRatio",
-                          PropNameDefault = "MixRatio",
-                          ObservationName = ObservationName)
+      .update_SigmasNames(
+        SigmasChosen = SigmasChosen,
+        SigmaType = "MixRatio",
+        PropNameDefault = "MixRatio",
+        ObservationName = ObservationName
+      )
   }
 
   stopifnot(length(BQL) == 1)
   stopifnot(length(BQLValue) == 1)
-  stopifnot(length(Frozen) == 1)
+  stopifnot(length(Frozen) == 1 || length(SigmasChosen))
   stopifnot(length(ResetObs) == 1)
 
   if (length(PMLStructure) > 1) {
@@ -110,7 +119,9 @@ validate_Observation <- function(ObservationInstance) {
   if (ObservationInstance$BQL &&
       !is.na(ObservationInstance$BQLValue) &&
       ObservationInstance$BQLValue <= 0) {
-    stop("BQL value for ", ObservationInstance$ObservationName, " should be positive.")
+    stop("BQL value for ",
+         ObservationInstance$ObservationName,
+         " should be positive.")
   } else if (!ObservationInstance$BQL &&
              !is.na(ObservationInstance$BQLValue)) {
     warning("BQL value won't be used since BQL flag is FALSE.")
@@ -173,9 +184,7 @@ validate_Observation <- function(ObservationInstance) {
 #'
 #' @export
 Observation <- function(ObservationName = "CObs",
-                        SigmasChosen = Sigmas(
-                          Proportional = 0.1
-                        ),
+                        SigmasChosen = Sigmas(Proportional = 0.1),
                         BQL = FALSE,
                         BQLValue = NA,
                         Frozen = FALSE,
@@ -196,8 +205,8 @@ Observation <- function(ObservationName = "CObs",
   if (.check_0nzchar(ObservationInstance$PMLStructure)) {
     ObservationInstance <-
       .assign_TextToVariable(ParmList = ObservationInstance,
-                            "PMLStructure",
-                            ObservationInstance$PMLStructure)
+                             "PMLStructure",
+                             ObservationInstance$PMLStructure)
   }
 
   validate_Observation(ObservationInstance)
@@ -215,39 +224,52 @@ Observation <- function(ObservationName = "CObs",
   InputName
 }
 
-.update_SigmasNames <- function(SigmasChosen, SigmaType, PropNameDefault, ObservationName) {
-  if (inherits(SigmasChosen[[SigmaType]]$PropPart[[1]], "StParm") &&
-      SigmasChosen[[SigmaType]]$PropPart[[1]]$StParmName == PropNameDefault) {
-    OldMultStdev <- SigmasChosen[[SigmaType]]$PropPart[[PropNameDefault]]
-    SigmasChosen[[SigmaType]]$PropPart[[PropNameDefault]] <- NULL
-    InputName <- .get_InputName(ObservationName)
-    StParmName <- paste0(InputName, OldMultStdev$StParmName)
-    SigmasChosen[[SigmaType]]$PropPart[[StParmName]] <-
-      StParm(StParmName = StParmName,
-             Type = OldMultStdev$Type,
-             State = OldMultStdev$State,
-             ThetaStParm = Theta(InitialEstimates = OldMultStdev$ThetaStParm$InitialEstimates,
-                                 State = OldMultStdev$ThetaStParm$State,
-                                 Frozen = OldMultStdev$ThetaStParm$Frozen,
-                                 StParmName = StParmName),
-             OmegaStParm = Omega(InitialOmega = OldMultStdev$OmegaStParm$InitialOmega,
-                                 State = OldMultStdev$OmegaStParm$State,
-                                 Frozen = OldMultStdev$OmegaStParm$Frozen,
-                                 StParmName = StParmName),
-             Covariates = OldMultStdev$Covariates)
+.update_SigmasNames <-
+  function(SigmasChosen,
+           SigmaType,
+           PropNameDefault,
+           ObservationName) {
+    if (inherits(SigmasChosen[[SigmaType]]$PropPart[[1]], "StParm") &&
+        SigmasChosen[[SigmaType]]$PropPart[[1]]$StParmName == PropNameDefault) {
+      OldMultStdev <-
+        SigmasChosen[[SigmaType]]$PropPart[[PropNameDefault]]
+      SigmasChosen[[SigmaType]]$PropPart[[PropNameDefault]] <- NULL
+      InputName <- .get_InputName(ObservationName)
+      StParmName <- paste0(InputName, OldMultStdev$StParmName)
+      SigmasChosen[[SigmaType]]$PropPart[[StParmName]] <-
+        StParm(
+          StParmName = StParmName,
+          Type = OldMultStdev$Type,
+          State = OldMultStdev$State,
+          ThetaStParm = Theta(
+            InitialEstimates = OldMultStdev$ThetaStParm$InitialEstimates,
+            State = OldMultStdev$ThetaStParm$State,
+            Frozen = OldMultStdev$ThetaStParm$Frozen,
+            StParmName = StParmName
+          ),
+          OmegaStParm = Omega(
+            InitialOmega = OldMultStdev$OmegaStParm$InitialOmega,
+            State = OldMultStdev$OmegaStParm$State,
+            Frozen = OldMultStdev$OmegaStParm$Frozen,
+            StParmName = StParmName
+          ),
+          Covariates = OldMultStdev$Covariates
+        )
 
+    }
+
+    SigmasChosen
   }
-
-  SigmasChosen
-}
 
 #' @export
 output.Observation <- function(x, ...) {
   x <- validate_Observation(x)
 
   InputName <- .get_InputName(x$ObservationName)
-  if (length(x$Covariates) == 1 && x$Covariates[[1]]$Type == "Continuous") {
-    ObserveRHS <- paste0(x$ObservationName, "(", x$Covariates[[1]]$Name, ")")
+  if (length(x$Covariates) == 1 &&
+      x$Covariates[[1]]$Type == "Continuous") {
+    ObserveRHS <-
+      paste0(x$ObservationName, "(", x$Covariates[[1]]$Name, ")")
   } else {
     ObserveRHS <- x$ObservationName
   }
@@ -255,47 +277,79 @@ output.Observation <- function(x, ...) {
   ErrorName <- paste0(InputName, "Eps")
   OutputObservationParts <- c()
   ErrorModelNames <- names(x$SigmasChosen)
-  ErrorModelNames <- ErrorModelNames[ErrorModelNames != "ObservationName"]
-
-  if (x$Frozen) {
-    Freeze <- "(freeze)"
-  } else {
-    Freeze <- character(0)
-  }
+  ErrorModelNames <-
+    ErrorModelNames[ErrorModelNames != "ObservationName"]
 
   if (x$BQL) {
     ObserveTextFinalPart <- ", bql"
     if (!is.na(x$BQLValue)) {
-      ObserveTextFinalPart <- paste0(ObserveTextFinalPart, "=", x$BQLValue)
+      ObserveTextFinalPart <-
+        paste0(ObserveTextFinalPart, "=", x$BQLValue)
     }
   } else {
     ObserveTextFinalPart <- ""
   }
 
   if (x$ResetObs) {
-    ObserveTextFinalPart <- paste0(ObserveTextFinalPart, ", doafter={", InputName, "=0; }")
+    ObserveTextFinalPart <-
+      paste0(ObserveTextFinalPart, ", doafter={", InputName, "=0; }")
   }
 
   ObserveTextFinalPart <- paste0(ObserveTextFinalPart, ")")
+
+  ErrorTypes <-
+    c(
+      "Additive",
+      "LogAdditive",
+      "Proportional",
+      "AdditiveMultiplicative",
+      "MixRatio",
+      "Power"
+    )
+  if (length(x$Frozen) == 1) {
+    if (x$Frozen) {
+      Freeze <- rep("(freeze)", length(ErrorTypes))
+    } else {
+      Freeze <- rep("", length(ErrorTypes))
+    }
+
+    names(Freeze) <- ErrorTypes
+  } else {
+    Freeze <- ifelse(x$Frozen, "(freeze)", "")
+  }
+
 
   SigmasChosen <- validate_Sigmas(x$SigmasChosen)
   for (ErrorModelIndex in seq_along(ErrorModelNames)) {
     # adding error() part
     ErrorModelText <- ""
     if (ErrorModelNames[ErrorModelIndex] %in% c("Additive", "LogAdditive", "Proportional")) {
-      if (SigmasChosen[[ErrorModelIndex]] <= 0) next
+      if (SigmasChosen[[ErrorModelIndex]] <= 0)
+        next
       ErrorModelText <-
-        paste0("error", "(", ErrorName, Freeze, " = ", SigmasChosen[[ErrorModelIndex]])
+        paste0("error", "(", ErrorName, Freeze[ErrorModelNames[ErrorModelIndex]], " = ", SigmasChosen[[ErrorModelIndex]])
     } else if (ErrorModelNames[ErrorModelIndex] %in% c("AdditiveMultiplicative", "MixRatio")) {
-      if (SigmasChosen[[ErrorModelIndex]]$AddPart == 0) next
+      if (SigmasChosen[[ErrorModelIndex]]$AddPart == 0)
+        next
 
       ErrorModelText <-
-        paste0("error", "(", ErrorName, Freeze, " = ", SigmasChosen[[ErrorModelIndex]]$AddPart)
+        paste0("error",
+               "(",
+               ErrorName,
+               Freeze[ErrorModelNames[ErrorModelIndex]],
+               " = ",
+               SigmasChosen[[ErrorModelIndex]]$AddPart)
     } else if (ErrorModelNames[ErrorModelIndex] == "Power") {
-      if (SigmasChosen[[ErrorModelIndex]]$StdevPart == 0) next
+      if (SigmasChosen[[ErrorModelIndex]]$StdevPart == 0)
+        next
 
       ErrorModelText <-
-        paste0("error", "(", ErrorName, Freeze, " = ", SigmasChosen[[ErrorModelIndex]]$StdevPart)
+        paste0("error",
+               "(",
+               ErrorName,
+               Freeze[ErrorModelNames[ErrorModelIndex]],
+               " = ",
+               SigmasChosen[[ErrorModelIndex]]$StdevPart)
     }
 
     ErrorModelText <- paste0(ErrorModelText, ")\n\t")
@@ -360,11 +414,9 @@ output.Observation <- function(x, ...) {
       )
 
       # adding stparm part
-      ErrorModelText <- paste(
-        ErrorModelText,
-        output(SigmasChosen[[ErrorModelIndex]]$PropPart[[1]]),
-        sep = "\n\t"
-      )
+      ErrorModelText <- paste(ErrorModelText,
+                              output(SigmasChosen[[ErrorModelIndex]]$PropPart[[1]]),
+                              sep = "\n\t")
 
     } else if (ErrorModelNames[ErrorModelIndex] == "MixRatio") {
       # Mix Ratio
@@ -385,11 +437,9 @@ output.Observation <- function(x, ...) {
       )
 
       # adding stparm part
-      ErrorModelText <- paste(
-        ErrorModelText,
-        output(SigmasChosen[[ErrorModelIndex]]$PropPart[[1]]),
-        sep = "\n\t"
-      )
+      ErrorModelText <- paste(ErrorModelText,
+                              output(SigmasChosen[[ErrorModelIndex]]$PropPart[[1]]),
+                              sep = "\n\t")
     } else if (ErrorModelNames[ErrorModelIndex] == "Power") {
       # Power model
       ErrorModelText <- paste0(

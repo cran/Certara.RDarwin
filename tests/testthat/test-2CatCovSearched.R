@@ -1,5 +1,6 @@
 test_that("2 Categories categorical covariate searched", {
   skip_if_not_installed("dplyr")
+  skip_if_not_installed("tidyr")
 
   DataFilePath <- "{data_dir}/OralBolus.csv"
   DataMapping <-

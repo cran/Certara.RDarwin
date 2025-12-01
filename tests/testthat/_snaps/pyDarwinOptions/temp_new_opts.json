@@ -1,0 +1,50 @@
+{
+    "author": "Jane Smith",
+    "project_name": "MyNewProject",
+    "algorithm": "MOGA3",
+    "MOGA": {
+        "objectives": 3,
+        "constraints": 1,
+        "partitions": 8,
+        "crossover": "single",
+        "crossover_rate": 0.95,
+        "mutation_rate": 0.95,
+        "attribute_mutation_probability": 0.1
+    },
+    "random_seed": 123,
+    "num_parallel": 2,
+    "num_generations": 20,
+    "population_size": 30,
+    "crash_value": 100000000,
+    "effect_limit": 5,
+    "downhill_period": 2,
+    "num_niches": 2,
+    "niche_radius": 2,
+    "final_downhill_search": true,
+    "local_grid_search": true,
+    "max_local_grid_search_bits": 2,
+    "model_run_timeout": 600,
+    "model_run_priority_class": "below_normal",
+    "postprocess": {
+        "use_python": true,
+        "post_run_python_code": "post.py"
+    },
+    "rerun_front_models": false,
+    "use_saved_models": false,
+    "remove_run_dir": false,
+    "remove_temp_dir": false,
+    "keep_files": "output.lst",
+    "keep_extensions": [
+        "ext",
+        "cov"
+    ],
+    "use_system_options": true,
+    "model_cache": "darwin.MemoryModelCache",
+    "model_run_man": "darwin.LocalRunManager",
+    "engine_adapter": "nonmem",
+    "skip_running": true,
+    "output_dir": "{working_dir}/output",
+    "non_dominated_models_dir": "{working_dir}/front_runners",
+    "nmfe_path": "/opt/nm75/nmfe75"
+}
+

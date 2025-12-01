@@ -69,7 +69,7 @@ name set to "n" + \code{StParmName}}
 included in the structural parameter statement.}
 
 \item{PMLStructures}{Character or character vector specifying names of PML
-structures to whichthe structural parameter will be added. For the naming
+structures to which the structural parameter will be added. For the naming
 convention of PMLStructures, see Details section of
 \code{\link[=get_PMLParametersSets]{get_PMLParametersSets()}}.}
 }
@@ -85,7 +85,7 @@ This function can  be applied to the custom models.
 It allows modification of custom structural parameters defined in the PML code
 of these spaces.
 
-When modifying a custom structural parameter, the corresponding \code{stparm}
+When modifying a custom structural parameter, the corresponding \code{Stparm}
 statement is removed from the PML code, and the updated parameter is added
 back as a \code{StParm} class using the provided arguments. Similarly, associated
 \code{fixef} and \code{ranef} statements related to the custom structural parameter are

@@ -55,7 +55,8 @@ only if \code{Type == "Continuous"}.}
 \item{Categories}{A numeric vector representing the categories (at least two)
 of the covariate. Applicable only if \code{Type} is either \code{Occasion} or
 \code{Categorical}. The first category is set to the reference category for
-categorical covariate.}
+categorical covariate. If a named vector is used, the names are used as
+labels for the given dataset,}
 
 \item{PMLStructures}{Character or character vector specifying names of PML
 structures to which the covariate will be added. For the naming covention

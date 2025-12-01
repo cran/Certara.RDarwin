@@ -1,0 +1,36 @@
+##Description: A 2-cpt PK model with a covariate
+##Author: R Test Suite
+##DATA {data_dir}/complex_data.csv
+##MAP  WT=WT  Aa = Dose_mg CObs = Conc_ng_mL id = SubjectID time = Time_h
+##MODEL test() {
+	cfMicro(A1, Cl / V, Cl2 / V, Cl2 / V2, first = (Aa = Ka))
+C = A1 / V
+	dosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)
+	error(CEps = 0.1)
+	observe(CObs = C + CEps*sqrt(1 + C*C*(CMultStdev/sigma())^2))
+	stparm(CMultStdev = tvCMultStdev )
+	fixef(tvCMultStdev= c(, 1, ))
+	
+	fcovariate(WT)
+	stparm(Cl = tvCl  * (WT/70)^dCldWT {_nCl[1]})
+	fixef(tvCl= c(, 5, ))
+	fixef(dCldWT= c(, 0, ))
+	{_nCl[2]}
+	stparm(V = tvV * exp( nV ))
+	fixef(tvV= c(, 50, ))
+	ranef(diag(nV) = c(0.09))
+	stparm(Cl2 = tvCl2 )
+	fixef(tvCl2(freeze) = c(, 2, ))
+	
+	stparm(V2 = tvV2 )
+	fixef(tvV2(freeze) = c(, 100, ))
+	
+	stparm(Ka = tvKa * exp( nKa ))
+	fixef(tvKa= c({_InEst_tvKa[1]}))
+	ranef(diag(nKa) = c(0.09))
+
+}
+##ESTARGS
+maxiter=1000
+##TABLES
+

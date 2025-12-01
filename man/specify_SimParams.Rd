@@ -2,7 +2,7 @@
 % Please edit documentation in R/specify_SimParams.R
 \name{specify_SimParams}
 \alias{specify_SimParams}
-\title{Specify engine parameters for model simulation}
+\title{Specify Engine Parameters for Model Simulation}
 \usage{
 specify_SimParams(
   numReplicates = 100L,
@@ -15,48 +15,78 @@ specify_SimParams(
 )
 }
 \arguments{
-\item{numReplicates}{Integer; Number of replicates to simulate the model}
+\item{numReplicates}{Integer; Number of replicates (simulations) to generate.
+Must be positive. \strong{Always included in output.}}
 
-\item{seed}{Integer; Random number generator seed}
+\item{seed}{Integer; Seed for the random number generator used during
+simulation.
+\strong{Always included in output.}}
 
-\item{sort}{Logical; Specifying whether or not to sort the input data by
-subject and time values. Default is \code{TRUE}.}
+\item{sort}{Logical; Specifies whether to sort the input data by subject and
+time before simulation. \strong{Default: \code{FALSE}}. \strong{Always included in
+output.}}
 
-\item{ODE}{Character; Specifying the solver used to numerically solve
-Ordinary Differential Equations (ODEs). Options are
-\itemize{
-\item \code{MatrixExponent} (the default),
-\item \code{DVERK},
-\item \code{DOPRI5},
-\item \code{AutoDetect},
-\item \code{Stiff}.
-}
+\item{ODE}{Character; Specifies the ODE solver. Options: \code{"MatrixExponent"},
+\code{"DVERK"}, \code{"DOPRI5"}, \code{"AutoDetect"}, \code{"Stiff"}. \strong{Default:
+\code{"MatrixExponent"}}.}
 
-Note: both \code{DVERK} and \code{DOPRI5} are non-stiff solvers. NLME will
-automatically switches to \code{DVERK} if ODEs are nonlinear.}
+\item{rtolODE}{Numeric; Relative tolerance for the ODE solver.
+\strong{Default: \code{1e-6}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
 
-\item{rtolODE}{Numeric; Specifying relative tolerance for the ODE solver.
-Not applicable when \code{ODE == MatrixExponent}.}
+\item{atolODE}{Numeric; Absolute tolerance for the ODE solver.
+\strong{Default: \code{1e-6}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
 
-\item{atolODE}{Numeric; Specifying absolute tolerance for the ODE solver.}
-
-\item{maxStepsODE}{Numeric; Specifying maximum number of allowable steps or
-function evaluations for the ODE solver.}
+\item{maxStepsODE}{Integer; Maximum number of steps for the ODE solver.
+\strong{Default: \code{50000L}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
 }
 \value{
-Character
+A \strong{single character string} containing space-separated \code{name=value}
+pairs, ordered according to the function signature. Includes
+\code{numReplicates}, \code{seed}, \code{sort} always, and other parameters if specified
+with non-default, applicable values.
 }
 \description{
-Use to define engine parameters for model simulation.
+Use to define engine parameters for model simulation. Generates a single
+character string containing space-separated \code{name=value} pairs.
+}
+\details{
+This function allows customization of the NLME engine settings
+specific to simulation runs. Parameters are validated based on type and
+range.
+
+The parameters \code{numReplicates}, \code{seed}, and \code{sort} are \strong{always} included in
+the output string. Other parameters (\code{ODE}, \code{rtolODE}, \code{atolODE},
+\code{maxStepsODE}) are included only if their specified value differs from the
+function's default value \emph{and} they are applicable (ODE tolerances are
+ignored if \code{ODE="MatrixExponent"}).
+
+Values are returned as character strings. The order of parameters in the
+output string matches the order in the function definition.
 }
 \examples{
+# Default settings (includes numReplicates, seed, sort)
 SimArgs1 <- specify_SimParams()
+print(SimArgs1)
 
+# Custom settings
 SimArgs2 <-
   specify_SimParams(
-    numReplicates = 100,
-    seed = 1,
-    ODE = "DVERK")
+    numReplicates = 50,
+    seed = 9876,
+    sort = TRUE, # Non-default
+    ODE = "DVERK", # Non-default
+    rtolODE = 1e-5 # Non-default and applicable
+  )
+print(SimArgs2)
+
+# Custom settings where ODE tolerances are ignored
+SimArgs3 <-
+  specify_SimParams(
+    numReplicates = 20,
+    ODE = "MatrixExponent", # Default, but tolerances are now inapplicable
+    rtolODE = 1e-4 # Non-default, but ignored
+   )
+print(SimArgs3)
 
 }
 \seealso{

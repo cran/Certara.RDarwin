@@ -6,7 +6,7 @@
 #' @param StParmName Character specifying the name of the structural parameter
 #'   to be added.
 #' @param PMLStructures Character or character vector specifying names of PML
-#'   structures to whichthe structural parameter will be added. For the naming
+#'   structures to which the structural parameter will be added. For the naming
 #'   convention of PMLStructures, see Details section of
 #'   [get_PMLParametersSets()].
 #' @param DosepointArgName Character specifying the name of the argument in the
@@ -175,6 +175,7 @@ modify_StParm <- function(PMLParametersSets,
   # for non-custom models warn that some parameters are essential
   if (!all(CustomModelsPresented) &&
       StParmName %in% ObligatoryStParmNames &&
+      !missing(State) &&
       State != "Present") {
     warning(
       "The structural parameter ",
@@ -197,7 +198,8 @@ modify_StParm <- function(PMLParametersSets,
   }
 
   if (length(DosepointArgName) == 0 &&
-      tolower(StParmName) %in% DosepointArgNames) {
+      tolower(StParmName) %in% DosepointArgNames &&
+      !Modify) {
     warning(
       "The StParm name to be added looks like Dosepoint special argument: ",
       StParmName,
@@ -287,91 +289,119 @@ modify_StParm <- function(PMLParametersSets,
     } else {
       # add_StParm used
       if (length(DosepointArgName) > 0) {
+        DosepointsPresentedInCurrentSpace <-
+          list_Dosepoints(PMLParametersSets[[PMLStructure]])
+        if (length(DosepointsPresentedInCurrentSpace) == 0) {
+          message("There are no Dosepoints to modify in ",
+                  PMLStructure)
+
+          next
+        }
+
+        if (length(DosepointsPresentedInCurrentSpace) > 1) {
+          if (length(PMLParametersSets[[PMLStructure]]$MainDosepoint) == 0) {
+            # move first Dosepoint to main
+            PMLParametersSets[[PMLStructure]]$MainDosepoint[DosepointsPresentedInCurrentSpace[1]] <-
+              PMLParametersSets[[PMLStructure]]$SecondaryDosepoints[DosepointsPresentedInCurrentSpace[1]]
+            PMLParametersSets[[PMLStructure]]$SecondaryDosepoints[DosepointsPresentedInCurrentSpace[1]] <-
+              NULL
+          }
+
+          message(
+            "Multiple dosepoints exist within the ",
+            PMLStructure,
+            " space; only the primary dosepoint (",
+            names(PMLParametersSets[[PMLStructure]]$MainDosepoint),
+            ") will be updated. ",
+            "To adjust any other dosepoints, please use modify_Dosepoint()."
+          )
+        }
+
         StParmsCurrentPMLSection <-
           list_StParms(PMLParametersSets[[PMLStructure]]$MainDosepoint,
                        IncludeAll = TRUE)
 
       } else {
-        StParmsCurrentPMLSection <-
-          list_StParms(PMLParametersSets[[PMLStructure]]$StParms,
-                       IncludeAll = TRUE)
-      }
+      StParmsCurrentPMLSection <-
+        list_StParms(PMLParametersSets[[PMLStructure]]$StParms,
+                     IncludeAll = TRUE)
+    }
 
-      if (StParmName %in% names(PMLParametersSets[[PMLStructure]]$CustomStParms)) {
-        message(
-          StParmName,
-          " is a custom StParm in ",
-          PMLStructure,
-          " space amd cannot be added. Use `modify_StParmCustom()` to change it."
-        )
+    if (StParmName %in% names(PMLParametersSets[[PMLStructure]]$CustomStParms)) {
+      message(
+        StParmName,
+        " is a custom StParm in ",
+        PMLStructure,
+        " space amd cannot be added. Use `modify_StParmCustom()` to change it."
+      )
 
-        next
-      }
+      next
+    }
 
-      if (StParmName %in% StParmsCurrentPMLSection) {
-        # we want to add StParm already added
-        message(
+    if (StParmName %in% StParmsCurrentPMLSection) {
+      # we want to add StParm already added
+      message(
+        "For PMLStructure == ",
+        PMLStructure,
+        ", StParmName == ",
+        StParmName,
+        " already exists and ",
+        "will be substituted."
+      )
+
+    } else if (StParmName %in% StParmsCurrentPML) {
+      # it is presented in PML, but not in the Dosepoint if
+      # DosepointArgName is not NULL or vice versa
+      if (length(DosepointArgName) > 0) {
+        warning(
           "For PMLStructure == ",
           PMLStructure,
           ", StParmName == ",
           StParmName,
-          " already exists and ",
-          "will be substituted."
+          " has been found in StParm section, not Dosepoint section",
+          " and won't be substituted.",
+          call. = FALSE
         )
-
-      } else if (StParmName %in% StParmsCurrentPML) {
-        # it is presented in PML, but not in the Dosepoint if
-        # DosepointArgName is not NULL or vice versa
-        if (length(DosepointArgName) > 0) {
-          warning(
-            "For PMLStructure == ",
-            PMLStructure,
-            ", StParmName == ",
-            StParmName,
-            " has been found in StParm section, not Dosepoint section",
-            " and won't be substituted.",
-            call. = FALSE
-          )
-        } else {
-          warning(
-            "For PMLStructure == ",
-            PMLStructure,
-            ", StParmName == ",
-            StParmName,
-            " has been found in Dosepoint section, not StParm section",
-            " and won't be substituted.",
-            call. = FALSE
-          )
-        }
-
-        next
-      }
-
-      # reinitialize
-      StParmToPaste <-
-        StParm(
-          StParmName = StParmName,
-          Type = Type,
-          State = State,
-          ThetaStParm = ThetaStParm,
-          OmegaStParm = OmegaStParm,
-          Covariates = Covariates,
-          PMLStructure = PMLStructure
-        )
-
-      if (length(DosepointArgName) > 0) {
-        # StParm inside Dosepoint
-        PMLParametersSets[[PMLStructure]]$MainDosepoint[[1]][[DosepointArgName]] <-
-          StParmToPaste
       } else {
-        PMLParametersSets[[PMLStructure]]$StParms[[StParmName]] <-
-          StParmToPaste
-
+        warning(
+          "For PMLStructure == ",
+          PMLStructure,
+          ", StParmName == ",
+          StParmName,
+          " has been found in Dosepoint section, not StParm section",
+          " and won't be substituted.",
+          call. = FALSE
+        )
       }
+
+      next
+    }
+
+    # reinitialize
+    StParmToPaste <-
+      StParm(
+        StParmName = StParmName,
+        Type = Type,
+        State = State,
+        ThetaStParm = ThetaStParm,
+        OmegaStParm = OmegaStParm,
+        Covariates = Covariates,
+        PMLStructure = PMLStructure
+      )
+
+    if (length(DosepointArgName) > 0) {
+      # StParm inside Dosepoint
+      PMLParametersSets[[PMLStructure]]$MainDosepoint[[1]][[DosepointArgName]] <-
+        StParmToPaste
+    } else {
+      PMLParametersSets[[PMLStructure]]$StParms[[StParmName]] <-
+        StParmToPaste
+
     }
   }
+}
 
-  PMLParametersSets
+PMLParametersSets
 }
 
 .subst_ClassInstance <-

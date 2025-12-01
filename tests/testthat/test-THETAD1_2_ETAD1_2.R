@@ -1,5 +1,6 @@
 test_that("THETA(D1) searched ETA(D1) searched", {
   skip_if_not_installed("dplyr")
+  skip_if_not_installed("tidyr")
 
   Rate <- TRUE
   DataFilePath <- "{data_dir}/OralBolusRD.csv"

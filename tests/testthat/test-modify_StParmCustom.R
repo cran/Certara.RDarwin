@@ -19,29 +19,33 @@ test_that("modify_StParmCustom works correctly ",
               )
 
             modelPMLCodes <- create_CustomSpace(OneCpt_CustomCode)
-            modelPMLCodes <-
-              modify_StParmCustom(modelPMLCodes, "Cl", Type = "Normal")
+            testthat::expect_message(
+              modelPMLCodes <- modify_StParmCustom(modelPMLCodes, "Cl", Type = "Normal"),
+                                     "Cannot remove nCl ranef statement")
 
-            testthat::expect_snapshot_value(modelPMLCodes$l425$PMLCode)
+            testthat::expect_snapshot_value(modelPMLCodes[[1]]$PMLCode)
 
-            CustomCode <- "deriv(Aa1 = -Ktr * Aa1)
-  deriv(Aa2 = Ktr * (Aa1 - Aa2))
-  deriv(A1 = Ktr * Aa2 - Cl * C)
-	dosepoint(Aa1)
-	C = A1 / V
-	error(CEps = 0.1)
-	observe(CObs = C * (1 + CEps))
-	fcovariate(OCC())
-	stparm(V = tvV * exp(nV + nVx0*(OCC==1) + nVx1*(OCC==2) + nVx2*(OCC==3)))
-	stparm(Cl = tvCl * exp(nCl))
-	stparm(Ktr = tvKtr * exp(nKtr))
-	fixef(tvV = c(, 5, ))
-	fixef(tvCl = c(, 1, ))
-	fixef(tvKtr = c(, 1, ))
-	ranef(diag(nV) = c(1))
-	ranef(diag(nVx0) = c(1), same(nVx1), same(nVx2))
-	ranef(diag(nCl) = c(1))
-	ranef(diag(nKtr) = c(1))"
+            CustomCode <- paste(
+              "deriv(Aa1 = -Ktr * Aa1)",
+              "deriv(Aa2 = Ktr * (Aa1 - Aa2))",
+              "deriv(A1 = Ktr * Aa2 - Cl * C)",
+              "dosepoint(Aa1)",
+              "C = A1 / V",
+              "error(CEps = 0.1)",
+              "observe(CObs = C * (1 + CEps))",
+              "fcovariate(OCC())",
+              "stparm(V = tvV * exp(nV + nVx0*(OCC==1) + nVx1*(OCC==2) + nVx2*(OCC==3)))",
+              "stparm(Cl = tvCl * exp(nCl))",
+              "stparm(Ktr = tvKtr * exp(nKtr))",
+              "fixef(tvV = c(, 5, ))",
+              "fixef(tvCl = c(, 1, ))",
+              "fixef(tvKtr = c(, 1, ))",
+              "ranef(diag(nV) = c(1))",
+              "ranef(diag(nVx0) = c(1), same(nVx1), same(nVx2))",
+              "ranef(diag(nCl) = c(1))",
+              "ranef(diag(nKtr) = c(1))",
+              sep = "\n\t"
+            )
 
             ## Create a simple built-in model and then add a custom model to it
             models <-
@@ -50,8 +54,11 @@ test_that("modify_StParmCustom works correctly ",
               add_CustomSpace(models, CustomCode = CustomCode)
 
             ## modify V
-            updatedModels <-
-              modify_StParmCustom(models, StParmName = "V", Type = "LogNormal2")
+            testthat::expect_message(
+              updatedModels <-
+                modify_StParmCustom(models, StParmName = "V", Type = "LogNormal2"),
+              "StParm V in the space PK1FOC is not custom and won't be modified"
+            )
 
             testthat::expect_snapshot_value(updatedModels, style = "json2")
           })

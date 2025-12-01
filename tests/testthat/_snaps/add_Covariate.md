@@ -1881,7 +1881,7 @@
     	stparm(Cl3 = tvCl3 * exp( nCl3 ))
     	fixef(tvCl3= c(, 5, ))
     	ranef(diag(nCl3) = c(1))
-    	stparm(V3 = tvV3 * exp( nV3  + (Occasion==1)*nV3Occasionx1 + (Occasion==2)*nV3Occasionx2 + (Occasion==3)*nV3Occasionx3 ))
+    	stparm(V3 = tvV3 * exp( nV3 + (Occasion==1)*nV3Occasionx1 + (Occasion==2)*nV3Occasionx2 + (Occasion==3)*nV3Occasionx3 ))
     	fixef(tvV3= c(, 1, ))
     	ranef(diag(nV3) = c(1))
     	ranef(diag(nV3Occasionx1) = c(1) , same(nV3Occasionx2) , same(nV3Occasionx3))

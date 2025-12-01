@@ -1,5 +1,6 @@
 test_that("THETA(D1) present ETA(D1) searched", {
   skip_if_not_installed("dplyr")
+  skip_if_not_installed("tidyr")
 
   DataFilePath <- "{data_dir}/OralBolusRD.csv"
   DataMapping <-

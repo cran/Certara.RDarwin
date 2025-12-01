@@ -1,32 +1,94 @@
-#' Create a Custom Space
+#' Create a Custom Space (PML Model) from Code
 #'
-#' This function creates a custom space object based on the provided custom
-#' code.
+#' Parses a character string containing custom PML code to create a structured
+#' representation within the `PMLModels` framework. This allows integrating
+#' user-defined models with the package's modification and generation tools.
 #'
-#' @param CustomCode A character string containing the custom code.
+#' @param CustomCode A character string containing the complete custom PML code
+#'   (e.g., the content of a `test(){...}` block, potentially excluding the
+#'   `test(){` and closing `}` depending on usage context, although including
+#'   them is safer for parsing). Multi-line strings are collapsed. Cannot be empty.
+#' @param SpaceName An optional character string specifying the name for this
+#'   custom model space. This name will be used as the key for this model within
+#'   the returned `PMLModels` list. If omitted or an empty string (`""`), a
+#'   unique identifier will be created by concatenating the letter
+#'   `"l"` with the number of characters in `CustomCode`. Providing a meaningful
+#'   name is recommended for clarity, especially when working with multiple custom models.
+#'   Ensure provided names are unique if creating multiple custom spaces intended
+#'   to coexist.
 #'
-#' @return A list with one element of the class `PMLModels`.
+#' @return A list object of class `PMLModels`. This list contains a *single*
+#'   element, named according to the provided or generated `SpaceName`. The
+#'   value of this element is an internal list structure (created by the internal
+#'   `CustomSpace` function) holding the original code and parsed components.
 #'
-#' @details This function parses the provided `CustomCode` and extracts
-#' information related to:
-#' * Responses/observations (`observe`, `multi`, `ordinal`, `count`, `event`, and `LL`)
-#' * Structural parameters (`stparm`)
-#' * Covariates (`covariate`, `fcovariate` and `interpolate`)
-#' * Dosepoints (`dosepoint` and `dosepoint2`)
-#' * Random effects (`ranef`)
-#' * Fixed effects (`fixef`)
-#' * Derivatives (`deriv`)
-#' * Urine compartments (`urinecpt`)
-#' * Closed Form statements (`cfMicro`, `cfMacro` and `cfMacro1`)
-#' * Distributed delay statements (`transit` and `delayInfCpt`)
+#' @details
+#' This function acts as a parser for custom PML code. It attempts to identify
+#' and extract various PML statements within the provided `CustomCode` string.
+#' Recognized statements include:
+#' \itemize{
+#'   \item Observations/Responses: `observe()`, `error()`, `multi()`, `ordinal()`, `count()`, `event()`, `LL()`
+#'   \item Structural Parameters: `stparm()`
+#'   \item Covariates: `covariate()` (parsed as backward), `fcovariate()` (parsed as forward), `interpolate()`
+#'   \item Dosing: `dosepoint()`, `dosepoint2()`
+#'   \item Parameter Definitions: `ranef()`, `fixef()`
+#'   \item Model Dynamics: `deriv()`, `cfMicro()`, `cfMacro()`, `cfMacro1()`, `transit()`, `delayInfCpt()`
+#'   \item Other Compartments: `urinecpt()`
+#' }
 #'
-#' The extracted information is then used to create a `CustomSpace` object,
-#' which contains the parsed and structured representation of the custom code.
-#' An identifier is generated and used as the name of the Space.
+#' The function cleans the code (removes comments, standardizes spacing) for
+#' parsing most statements but uses the original code for `stparm` and `fixef`
+#' parsing to preserve complex structures.
+#'
+#' The extracted components are stored as specific S3 objects (e.g.,
+#' `ObservationCustom`, `StParmCustom`, `CovariateCustom`, `DosepointCustom`)
+#' within the list element corresponding to the `SpaceName`. This structured
+#' representation allows the custom model to be potentially inspected or manipulated
+#' by other package functions, although interacting with built-in models via
+#' functions like `modify_StParm` is generally more robust than modifying custom
+#' code components directly.
+#'
+#' @family Model Creation
+#'
+#' @examples
+#' # Example custom PML code (simplified)
+#' custom_pml <- "test() {
+#'   cfMicro(A1, Cl / V)
+#'   dosepoint(A1)
+#'   C = A1 / V
+#'   error(CEps = 1)
+#'   observe(CObs = C + CEps)
+#'   stparm(V = tvV * exp(nV))
+#'   stparm(Cl = tvCl * exp(nCl))
+#'   fixef(tvV = c(, 1, ))
+#'   fixef(tvCl = c(, 1, ))
+#'   ranef(diag(nV, nCl) = c(1, 1))
+#' }
+#' "
+#'
+#' # Create a custom space with an explicit name
+#' custom_model_set <-
+#'   create_CustomSpace(CustomCode = custom_pml,
+#'                       SpaceName = "My1CptOral")
+#'
+#' # Print the structure (will show parsed components within the list element)
+#' # print(custom_model_set)
+#'
+#' # List the name of the created space
+#' names(custom_model_set) # Output: "My1CptOral"
+#'
+#' # Create a custom space with an automatically generated name
+#' custom_model_set_auto_name <- create_CustomSpace(CustomCode = custom_pml)
+#' names(custom_model_set_auto_name)
+#'
 #' @export
-create_CustomSpace <- function(CustomCode = character()) {
+create_CustomSpace <- function(CustomCode = character(), SpaceName = character()) {
   if (any(!is.character(CustomCode))) {
     stop("CustomCode should be a character")
+  }
+
+  if (!is.character(SpaceName)) {
+    stop("SpaceName should be a character")
   }
 
   if (length(CustomCode) > 1) {
@@ -35,12 +97,15 @@ create_CustomSpace <- function(CustomCode = character()) {
     stop("CustomCode couldn't be null.")
   }
 
+  if (length(SpaceName) == 0) {
+    SpaceName <- .get_CodeHash(CustomCode)
+  }
+
   CustomCode <-
     paste0(gsub("\\\n(?!=\\\t)", "\\\n\\\t", CustomCode, perl = TRUE),
            collapse = "\n")
 
   OriginalCustomCode <- CustomCode
-  SpaceName <- .get_CodeHash(CustomCode)
 
   # remove comments and clean from spaces
   CustomCode <- .clean_PML(CustomCode)

@@ -21,7 +21,7 @@ with default arguments.}
 written. Default is a file named "options.json" in the current working
 directory.}
 
-\item{pretty}{adds indentation whitespace to JSON output. Can be TRUE/FALSE or a number specifying the number of spaces to indent. See \code{\link[jsonlite:prettify]{prettify()}}}
+\item{pretty}{adds indentation whitespace to JSON output. Can be TRUE/FALSE or a number specifying the number of spaces to indent (default is 2). Use a negative number for tabs instead of spaces.}
 
 \item{digits}{max number of decimal digits to print for numeric values. Use \code{\link[=I]{I()}} to specify significant digits. Use \code{NA} for max precision.}
 

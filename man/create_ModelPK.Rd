@@ -215,6 +215,7 @@ PMLParametersSets <-
 \seealso{
 Functions used for Dosepoint specification: 
 \code{\link{Dosepoint}()},
+\code{\link{add_Dosepoint}()},
 \code{\link{modify_Dosepoint}()}
 
 Functions used for StParm specification: 

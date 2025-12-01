@@ -1,8 +1,8 @@
-# Setting tlag, add duration, Omega searched
+# Dosepoint: Set tlag(Searched), duration(StParm/Expression with StParm), Omega searched
 
-    ##Description: SearchElimTypeTlag
+    ##Description: Test1v4: Search Tlag, diff durations(Expr/StParm), search nV
     ##Author: Certara
-    ##MAP   {PML[1]} id = ID time = time DColumn = DColumn
+    ##MAP   {PML[1]} ID = ID time = time
     ##MODEL {PML[2]}
     ##ESTARGS
      sort=FALSE
@@ -40,7 +40,7 @@
                   "value": ["MAPText", "PMLText"]
                 }
               },
-              "value": [" Aa = Dose CObs = CObs", "test() {\n\tcfMicro(A1, Cl / V, first = (Aa = Ka))\n\tC = A1 / V\n\tdosepoint(Aa{_Tlag[1]},  duration = DColumn, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\t{_Tlag[2]}\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\n\t#search_block(nKa, nV)\n}"]
+              "value": [" Aa = AaDose CObs = CObs", "test() {\n\tcfMicro(A1, Cl / V, first = (Aa = Ka))\n\tC = A1 / V\n\tdosepoint(Aa{_Tlag[1]}, duration = 1/Rate, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\t{_Tlag[2]}\n\tstparm(Rate = tvRate )\n\tfixef(tvRate= c(0, 1, ))\n\t\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\n\t#search_block(nKa, nV, nTlag)\n}"]
             },
             {
               "type": "character",
@@ -51,7 +51,7 @@
                   "value": ["MAPText", "PMLText"]
                 }
               },
-              "value": [" Aa = Dose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Cl * C)\n\turinecpt(A0 = Cl * C)\n\tC = A1 / V\n\tdosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\terror(A0Eps = 0.1)\n\tobserve(A0Obs = A0 * (1 + A0Eps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n\t#search_block(nKa, nV)\n}"]
+              "value": [" Aa = AaDose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Cl * C)\n\turinecpt(A0 = Cl * C)\n\tC = A1 / V\n\tdosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\terror(A0Eps = 0.1)\n\tobserve(A0Obs = A0 * (1 + A0Eps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n\t#search_block(nKa, nV)\n}"]
             },
             {
               "type": "character",
@@ -62,7 +62,7 @@
                   "value": ["MAPText", "PMLText"]
                 }
               },
-              "value": [" Aa = Dose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Vmax * C / (Km + C))\n\tC = A1 / V\n\tdosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Vmax = tvVmax * exp( nVmax ))\n\tfixef(tvVmax= c(, 1, ))\n\tranef(diag(nVmax) = c(1))\n\tstparm(Km = tvKm * exp( nKm ))\n\tfixef(tvKm= c(, 1, ))\n\tranef(diag(nKm) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n\t#search_block(nKa, nV)\n}"]
+              "value": [" Aa = AaDose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Vmax * C / (Km + C))\n\tC = A1 / V\n\tdosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Vmax = tvVmax * exp( nVmax ))\n\tfixef(tvVmax= c(, 1, ))\n\tranef(diag(nVmax) = c(1))\n\tstparm(Km = tvKm * exp( nKm ))\n\tfixef(tvKm= c(, 1, ))\n\tranef(diag(nKm) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n\t#search_block(nKa, nV)\n}"]
             },
             {
               "type": "character",
@@ -73,7 +73,7 @@
                   "value": ["MAPText", "PMLText"]
                 }
               },
-              "value": [" Aa = Dose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Vmax * C / (Km + C))\n\turinecpt(A0 = Vmax * C / (Km + C))\n\tC = A1 / V\n\tdosepoint(Aa{_Tlag[1]},  duration = D, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\t{_Tlag[2]}\n\tstparm(D = tvD * exp( nD ))\n\tfixef(tvD= c(, 1, ))\n\tranef(diag(nD) = c(1))\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\terror(A0Eps = 0.1)\n\tobserve(A0Obs = A0 * (1 + A0Eps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Vmax = tvVmax * exp( nVmax ))\n\tfixef(tvVmax= c(, 1, ))\n\tranef(diag(nVmax) = c(1))\n\tstparm(Km = tvKm * exp( nKm ))\n\tfixef(tvKm= c(, 1, ))\n\tranef(diag(nKm) = c(1))\n\tstparm(V = tvV {_nV[2]})\n\tfixef(tvV= c(, 1, ))\n\t{_nV[1]}\n\n\t#search_block(nKa, nV, nD)\n}"]
+              "value": [" Aa = AaDose CObs = CObs", "test() {\n\tderiv(Aa = - Ka * Aa)\n\tderiv(A1 = Ka * Aa - Vmax * C / (Km + C))\n\turinecpt(A0 = Vmax * C / (Km + C))\n\tC = A1 / V\n\tdosepoint(Aa{_Tlag[1]}, duration = D, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\t{_Tlag[2]}\n\tstparm(D = tvD * exp( nD ))\n\tfixef(tvD= c(, 1, ))\n\tranef(diag(nD) = c(1))\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\terror(A0Eps = 0.1)\n\tobserve(A0Obs = A0 * (1 + A0Eps))\n\t\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\tstparm(Vmax = tvVmax * exp( nVmax ))\n\tfixef(tvVmax= c(, 1, ))\n\tranef(diag(nVmax) = c(1))\n\tstparm(Km = tvKm * exp( nKm ))\n\tfixef(tvKm= c(, 1, ))\n\tranef(diag(nKm) = c(1))\n\tstparm(V = tvV {_nV[1]})\n\tfixef(tvV= c(, 1, ))\n\t{_nV[2]}\n\n\t#search_block(nKa, nV, nD, nTlag)\n}"]
             }
           ]
         },
@@ -101,7 +101,7 @@
                   "value": ["StParm", "StParm"]
                 }
               },
-              "value": [",  tlag = Tlag", "stparm(Tlag = tvTlag * exp( nTlag ))\n\tfixef(tvTlag= c(, 1, ))\n\tranef(diag(nTlag) = c(1))"]
+              "value": [", tlag = Tlag", "stparm(Tlag = tvTlag * exp( nTlag ))\n\tfixef(tvTlag= c(, 1, ))\n\tranef(diag(nTlag) = c(1))"]
             }
           ]
         },
@@ -115,7 +115,7 @@
                 "names": {
                   "type": "character",
                   "attributes": {},
-                  "value": ["OmegaInit", "vOmega"]
+                  "value": ["Ranefs", "Ranefs"]
                 }
               },
               "value": ["", ""]
@@ -126,10 +126,10 @@
                 "names": {
                   "type": "character",
                   "attributes": {},
-                  "value": ["OmegaInit", "vOmega"]
+                  "value": ["Ranefs", "Ranefs"]
                 }
               },
-              "value": ["ranef(diag(nV) = c(1))", "* exp( nV )"]
+              "value": ["* exp( nV )", "ranef(diag(nV) = c(1))"]
             }
           ]
         }
@@ -346,7 +346,7 @@
                   "value": ["StParm", "StParm"]
                 }
               },
-              "value": [",  duration = D", "stparm(D = tvD * exp( nD ))\n\tfixef(tvD= c(, 1, ))\n\tranef(diag(nD) = c(1))"]
+              "value": [", duration = D", "stparm(D = tvD * exp( nD ))\n\tfixef(tvD= c(, 1, ))\n\tranef(diag(nD) = c(1))"]
             }
           ]
         }
@@ -447,10 +447,9 @@
     	{Cl_BW[2]}
     	{Cl_Sex[2]}
     	ranef(diag(nCl) = c(1))
-    	stparm(V = tvV * exp( nV {V_Occasion[1]} ))
+    	stparm(V = tvV {_nV[1]})
     	fixef(tvV= c(, 1, ))
-    	ranef(diag(nV) = c(1))
-    	{V_Occasion[2]}
+    	{_nV[2]}
     	stparm(Cl2 = tvCl2 * exp( nCl2 ))
     	fixef(tvCl2= c(, 1, ))
     	ranef(diag(nCl2) = c(1))
@@ -460,7 +459,7 @@
     
     }
     ##ESTARGS
-     sort=FALSE ODE=AutoDetect method=QRPEM tDOF=3 numSampleSIR=15 numBurnIn=1 MCPEM=TRUE
+     sort=FALSE ODE=AutoDetect method=QRPEM numSampleSIR=15 numBurnIn=1 MCPEM=TRUE
     ##TABLES
     
 
@@ -472,7 +471,7 @@
         "names": {
           "type": "character",
           "attributes": {},
-          "value": ["Cl_Age", "Cl_BW", "Cl_Sex", "V_Occasion"]
+          "value": ["Cl_Age", "Cl_BW", "Cl_Sex", "_nV"]
         }
       },
       "value": [
@@ -570,10 +569,10 @@
                 "names": {
                   "type": "character",
                   "attributes": {},
-                  "value": ["CovOmegaInStParm", "CovOmegaInRanef"]
+                  "value": ["Ranefs", "Ranefs"]
                 }
               },
-              "value": ["", ""]
+              "value": ["* exp( nV )", "ranef(diag(nV) = c(1))"]
             },
             {
               "type": "character",
@@ -581,10 +580,10 @@
                 "names": {
                   "type": "character",
                   "attributes": {},
-                  "value": ["CovOmegaInStParm", "CovOmegaInRanef"]
+                  "value": ["Ranefs", "Ranefs"]
                 }
               },
-              "value": [" + (Occasion==1)*nVOccasionx1 + (Occasion==2)*nVOccasionx2 + (Occasion==3)*nVOccasionx3", "ranef(diag(nVOccasionx1) = c(1) , same(nVOccasionx2) , same(nVOccasionx3))"]
+              "value": ["* exp( nV + (Occasion==1)*nVOccasionx1 + (Occasion==2)*nVOccasionx2 + (Occasion==3)*nVOccasionx3 )", "ranef(diag(nV) = c(1))\n\tranef(diag(nVOccasionx1) = c(1) , same(nVOccasionx2) , same(nVOccasionx3))"]
             }
           ]
         }
@@ -644,7 +643,7 @@
                   "value": ["MAPText", "PMLText"]
                 }
               },
-              "value": [" A1 = AMT CObs = Conc CObsBQL = CObsBQL", "test() {\n\tdelayInfCpt(A1, MeanDelayTime, ShapeParamMinusOne, out = - Cl * C, dist = Weibull)\n\tC = A1 / V\n\tdosepoint(A1,  rate = Rate, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)\n\tstparm(Rate = tvRate {Rate_Weight[1]} * exp( nRate ))\n\tfixef(tvRate= c(, 1, ))\n\t{Rate_Weight[2]}\n\tranef(diag(nRate) = c(1))\n\t{_CObs[1]}\n\tfcovariate(Weight)\n\tstparm(MeanDelayTime = tvMeanDelayTime {MeanDelayTime_Weight[1]} * exp( nMeanDelayTime ))\n\tfixef(tvMeanDelayTime= c(, 1, ))\n\t{MeanDelayTime_Weight[2]}\n\tranef(diag(nMeanDelayTime) = c(1))\n\tstparm(ShapeParamMinusOne = tvShapeParamMinusOne {ShapeParamMinusOne_Weight[1]} * exp( nShapeParamMinusOne ))\n\tfixef(tvShapeParamMinusOne= c(, 1, ))\n\t{ShapeParamMinusOne_Weight[2]}\n\tranef(diag(nShapeParamMinusOne) = c(1))\n\tstparm(Cl = exp( tvCl {Cl_Weight[1]} + nCl ))\n\tfixef(tvCl= c({_InEst_tvCl[1]}))\n\t{Cl_Weight[2]}\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV {V_Weight[1]} * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\t{V_Weight[2]}\n\tranef(diag(nV) = c(0.1))\n\n}"]
+              "value": [" A1 = AMT CObs = Conc CObsBQL = CObsBQL", "test() {\n\tdelayInfCpt(A1, MeanDelayTime, ShapeParamMinusOne, out = - Cl * C, dist = Weibull)\n\tC = A1 / V\n\tdosepoint(A1, rate = Rate, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)\n\tstparm(Rate = tvRate {Rate_Weight[1]} * exp( nRate ))\n\tfixef(tvRate= c(, 1, ))\n\t{Rate_Weight[2]}\n\tranef(diag(nRate) = c(1))\n\t{_CObs[1]}\n\tfcovariate(Weight)\n\tstparm(MeanDelayTime = tvMeanDelayTime {MeanDelayTime_Weight[1]} * exp( nMeanDelayTime ))\n\tfixef(tvMeanDelayTime= c(, 1, ))\n\t{MeanDelayTime_Weight[2]}\n\tranef(diag(nMeanDelayTime) = c(1))\n\tstparm(ShapeParamMinusOne = tvShapeParamMinusOne {ShapeParamMinusOne_Weight[1]} * exp( nShapeParamMinusOne ))\n\tfixef(tvShapeParamMinusOne= c(, 1, ))\n\t{ShapeParamMinusOne_Weight[2]}\n\tranef(diag(nShapeParamMinusOne) = c(1))\n\tstparm(Cl = exp( tvCl {Cl_Weight[1]} + nCl ))\n\tfixef(tvCl= c({_InEst_tvCl[1]}))\n\t{Cl_Weight[2]}\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV {V_Weight[1]} * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\t{V_Weight[2]}\n\tranef(diag(nV) = c(0.1))\n\n}"]
             }
           ]
         },
@@ -672,7 +671,7 @@
                   "value": ["StParm", "StParm"]
                 }
               },
-              "value": [",  tlag = Tlag", "stparm(Tlag = tvTlag {Tlag_Age[1]} {Tlag_Weight[1]} * exp( nTlag ))\n\tfixef(tvTlag= c(, 1, ))\n\t{Tlag_Age[2]}\n\t{Tlag_Weight[2]}\n\tranef(diag(nTlag) = c(1))"]
+              "value": [", tlag = Tlag", "stparm(Tlag = tvTlag {Tlag_Age[1]} {Tlag_Weight[1]} * exp( nTlag ))\n\tfixef(tvTlag= c(, 1, ))\n\t{Tlag_Age[2]}\n\t{Tlag_Weight[2]}\n\tranef(diag(nTlag) = c(1))"]
             }
           ]
         },
@@ -1141,6 +1140,82 @@
                 }
               },
               "value": ["error(A0Eps = 0.02)\n\tobserve(A0Obs = A0 + A0Eps*sqrt(1 + A0*A0*(A0MultStdev/sigma())^2), doafter={A0=0; })\n\tstparm(A0MultStdev = tvA0MultStdev )\n\tfixef(tvA0MultStdev= c(, 0.2, ))\n\t"]
+            }
+          ]
+        }
+      ]
+    }
+
+# Dosepoint: Expression class usage (text, multi-StParm, math, states)
+
+    ##Description: Test Expression class in Dosepoint
+    ##Author: Certara
+    ##MAP    Aa = AaDose CObs = CObs ID = ID time = time TlagColumn = TlagColumn
+    ##MODEL test() {
+    	cfMicro(A1, Cl / V, first = (Aa = Ka))
+    	C = A1 / V
+    	dosepoint(Aa, tlag = 1{Aa_bioavail_Expression[1]}, rate = BaseRate / 2, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)
+    	{Aa_bioavail_Expression[2]}
+    	{Aa_bioavail_Expression[3]}
+    	stparm(BaseRate = tvBaseRate * exp( nBaseRate ))
+    	fixef(tvBaseRate= c(, 5, ))
+    	ranef(diag(nBaseRate) = c(1))
+    	error(CEps = 0.1)
+    	observe(CObs = C * (1 + CEps))
+    	
+    	stparm(Cl = tvCl * exp( nCl ))
+    	fixef(tvCl= c(, 1, ))
+    	ranef(diag(nCl) = c(1))
+    	stparm(V = tvV * exp( nV ))
+    	fixef(tvV= c(, 1, ))
+    	ranef(diag(nV) = c(1))
+    	stparm(Ka = tvKa * exp( nKa ))
+    	fixef(tvKa= c(, 1, ))
+    	ranef(diag(nKa) = c(1))
+    
+    }
+    ##ESTARGS
+     sort=FALSE
+    ##TABLES
+    
+
+---
+
+    {
+      "type": "list",
+      "attributes": {
+        "names": {
+          "type": "character",
+          "attributes": {},
+          "value": ["Aa_bioavail_Expression"]
+        }
+      },
+      "value": [
+        {
+          "type": "list",
+          "attributes": {},
+          "value": [
+            {
+              "type": "character",
+              "attributes": {
+                "names": {
+                  "type": "character",
+                  "attributes": {},
+                  "value": ["Expression", "Expression", "Expression"]
+                }
+              },
+              "value": ["", "", ""]
+            },
+            {
+              "type": "character",
+              "attributes": {
+                "names": {
+                  "type": "character",
+                  "attributes": {},
+                  "value": ["Expression", "Expression", "Expression"]
+                }
+              },
+              "value": [", bioavail = F1 * F2", "stparm(F1 = tvF1 * exp( nF1 ))\n\tfixef(tvF1= c(, 0.8, ))\n\tranef(diag(nF1) = c(1))", "stparm(F2 = tvF2 * exp( nF2 ))\n\tfixef(tvF2= c(, 0.9, ))\n\tranef(diag(nF2) = c(1))"]
             }
           ]
         }

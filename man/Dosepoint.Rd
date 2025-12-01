@@ -17,50 +17,63 @@ Dosepoint(
 \arguments{
 \item{DosepointName}{A character string giving the name of the Dosepoint.}
 
-\item{State}{A character string representing the state of the Dosepoint.
-Possible values are:
-\itemize{
-\item \code{None}: current Dosepoint is not used.
-\item \code{Present} (the default): current Dosepoint is used as is.
-\item \code{Searched}: current Dosepoint is added as a token to be searched.
-}}
+\item{State}{A character string giving the state of the Dosepoint, must be
+one of "None", "Present", "Searched". Default is "Present".}
 
-\item{tlag}{An optional structural parameter giving the time lag for the
-doses coming into current Dosepoint.}
+\item{tlag}{An optional parameter for the time lag. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{bioavail}{An optional structural parameter giving the bioavailability
-of the doses coming into current Dosepoint.}
+\item{bioavail}{An optional parameter for bioavailability. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{duration}{An optional structural parameter giving the duration of
-infusion for the doses coming into current Dosepoint.}
+\item{duration}{An optional parameter for the duration of infusion. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{rate}{An optional structural parameter giving the rate of infusion for
-the doses coming into current Dosepoint.}
+\item{rate}{An optional parameter for the rate of infusion. Can be an
+\code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+character string (which will be converted to an Expression).}
 
-\item{PMLStructure}{A character string that indicates bounded PML structure.}
+\item{PMLStructure}{A character string that indicates a specific PML structure
+this Dosepoint definition should be associated with.}
 }
 \value{
-A new Dosepoint object
+A new Dosepoint object.
 }
 \description{
 Create a new Dosepoint object and validate it
 }
 \examples{
+# Using StParm objects
 TlagStParm <- StParm("Tlag",
                      Type = "LogNormal",
-                     ThetaStParm = Theta(Name = "tvTlag",
-                                         InitialEstimates = 0.1))
+                     ThetaStParm = Theta(Name = "tvTlag", InitialEstimates = 0.1))
+FStParm <- StParm("F", ThetaStParm = Theta(Name = "tvF")) # Assuming Theta exists
 
-A1 <- Dosepoint(DosepointName = "A1",
-                State = "Present",
-                tlag = TlagStParm,
-                bioavail = StParm("F"))
+dp1 <- Dosepoint(DosepointName = "GutInput",
+                 State = "Present",
+                 tlag = TlagStParm,
+                 bioavail = FStParm)
+
+# Using Expression objects
+dp2 <- Dosepoint(DosepointName = "Infusion",
+                 rate = Expression("RateVal",
+                                   ContainedStParms =
+                                     list(StParm("RateVal",
+                                                 ThetaStParm = Theta("tvRateVal")))))
+
+# Using a character string (will be converted to Expression internally)
+dp3 <- Dosepoint(DosepointName = "Bolus",
+                 bioavail = "SystemicF") # Converted to Expression("SystemicF")
 
 }
 \seealso{
-\code{\link[=list_Dosepoints]{list_Dosepoints()}}
+\code{\link[=list_Dosepoints]{list_Dosepoints()}}, \code{\link[=add_Dosepoint]{add_Dosepoint()}}, \code{\link[=modify_Dosepoint]{modify_Dosepoint()}}, \code{\link[=StParm]{StParm()}}, \code{\link[=Expression]{Expression()}}
 
 Functions used for Dosepoint specification: 
+\code{\link{add_Dosepoint}()},
 \code{\link{create_ModelPK}()},
 \code{\link{modify_Dosepoint}()}
 }

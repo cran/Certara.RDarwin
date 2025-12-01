@@ -101,13 +101,15 @@
       RanefNamesPattern <- "[a-zA-Z0-9_\\,]+"
       RanefValuesPattern <- "[0-9\\.\\,Ee]+"
       Pattern <-
-        paste0("(diag|block)\\(",
-               RanefNamesPattern,
-               "\\)\\=(c\\()?",
-               RanefValuesPattern,
-               "\\)?(\\,?same\\(",
-               RanefNamesPattern,
-               "\\))*")
+        paste0(
+          "(diag|block)\\(",
+          RanefNamesPattern,
+          "\\)\\=(c\\()?",
+          RanefValuesPattern,
+          "\\)?(\\,?same\\(",
+          RanefNamesPattern,
+          "\\))*"
+        )
       OneRanefRegexpr <-
         gregexpr(Pattern, InParentModified, perl = TRUE)
       if (OneRanefRegexpr[[1]][1] == -1)
@@ -125,7 +127,16 @@
 
         # parse all names in current ranef
         OneRanefNamesRegexpr <-
-          gregexpr(paste0("((?<=", RanefType, "\\()|(?<=same\\())", RanefNamesPattern), Ranef, perl = TRUE)
+          gregexpr(
+            paste0(
+              "((?<=",
+              RanefType,
+              "\\()|(?<=same\\())",
+              RanefNamesPattern
+            ),
+            Ranef,
+            perl = TRUE
+          )
         if (OneRanefRegexpr[[1]][1] == -1)
           return(list())
 
@@ -134,7 +145,9 @@
 
         # parse all values in current ranef
         OneRanefValuesRegexpr <-
-          gregexpr(paste0("(?<=\\W)", RanefValuesPattern, "(?=\\W+)"), Ranef, perl = TRUE)
+          gregexpr(paste0("(?<=\\W)", RanefValuesPattern, "(?=\\W+)"),
+                   Ranef,
+                   perl = TRUE)
         if (OneRanefValuesRegexpr[[1]][1] == -1)
           return(list())
 
@@ -142,10 +155,12 @@
           strsplit(unlist(regmatches(Ranef, OneRanefValuesRegexpr)), ",")
 
         CustomStatements[[paste(RanefNames[[1]], collapse = "__")]] <-
-          list(RanefType = RanefType,
-               RanefNames = RanefNames,
-               RanefValues = RanefValues,
-               Statement = Ranef)
+          list(
+            RanefType = RanefType,
+            RanefNames = RanefNames,
+            RanefValues = RanefValues,
+            Statement = Ranef
+          )
       }
     } else if (Statement == "error") {
       InParentSplitted <- strsplit(InParent, "( |\\(|\\=|\\))")[[1]]
@@ -162,7 +177,9 @@
 
     } else if (Statement %in% c("dosepoint", "dosepoint2")) {
       # R cmd check variables
-      rate <- idosevar <- infdosevar <- infratevar <- bioavail <- tlag <- NULL
+      rate <-
+        duration <-
+        idosevar <- infdosevar <- infratevar <- bioavail <- tlag <- NULL
       # get rid of spaces around '='
       InParent <-
         gsub(paste0("\\s*\\=\\s*"), "=", InParent, perl = TRUE)
@@ -177,6 +194,7 @@
 
       DosepointWords <-
         c("rate",
+          "duration",
           "idosevar",
           "infdosevar",
           "infratevar",
@@ -212,6 +230,7 @@
           Dobefore = InParentWODosList$dobefore,
           Doafter = InParentWODosList$doafter,
           Rate = rate,
+          Duration = duration,
           Idosevar = idosevar,
           Infdosevar = infdosevar,
           Infratevar = infratevar,

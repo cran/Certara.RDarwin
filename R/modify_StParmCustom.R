@@ -10,7 +10,7 @@
 #' It allows modification of custom structural parameters defined in the PML code
 #' of these spaces.
 #'
-#' When modifying a custom structural parameter, the corresponding `stparm`
+#' When modifying a custom structural parameter, the corresponding `Stparm`
 #' statement is removed from the PML code, and the updated parameter is added
 #' back as a `StParm` class using the provided arguments. Similarly, associated
 #' `fixef` and `ranef` statements related to the custom structural parameter are

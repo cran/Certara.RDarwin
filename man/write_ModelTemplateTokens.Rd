@@ -34,12 +34,18 @@ section.}
 
 \item{DataFilePath}{A data file path used by NLME.}
 
-\item{DataMapping}{A named vector ModelTerm = DataTerm for the used data
-file.}
+\item{DataMapping}{Mapping of model terms to data column names, which can be:
+\itemize{
+\item \strong{A named character vector}: Used when \code{PMLParametersSets} contains
+a single parameter set. Maps model terms to data columns.
+\item \strong{A named list of named character vectors}: Used when \code{PMLParametersSets}
+contains multiple parameter sets. Each element corresponds to a parameter
+set, with list names matching the names of \code{PMLParametersSets}.
+}}
 
 \item{ColDef}{A character string specifying additional column definitions in
-NLME column definition format. See
-\url{https://onlinehelp.certara.com/phoenix/8.4/index.html#t=Phoenix_UserDocs\%2FPML\%2FColumn_mappings.htm}}
+NLME column definition format. See Phoenix NLME documentation for details.
+\url{https://onlinehelp.certara.com/phoenix/8.6/index.html#t=Phoenix_UserDocs\%2FPML\%2FColumn_mappings.htm}}
 
 \item{PMLParametersSets}{A list of PML parameters sets (\code{PMLModels} class
 instance).}
@@ -54,8 +60,8 @@ instance).}
 tables to be generated after fitting or during simulation.}
 
 \item{AppendixRows}{Additional rows to include in the model template appendix
-in NLME column definition format. See
-\url{https://onlinehelp.certara.com/phoenix/8.4/index.html#t=Phoenix_UserDocs\%2FPML\%2FColumn_mappings.htm}}
+in NLME column definition format. See Phoenix NLME documentation for details.
+\url{https://onlinehelp.certara.com/phoenix/8.6/index.html#t=Phoenix_UserDocs\%2FPML\%2FColumn_mappings.htm}}
 
 \item{OmegaSearchBlocks}{A list of character vectors representing omega names
 to try to build block omegas.}
@@ -68,16 +74,38 @@ This function generates and writes the model template and tokens files based
 on the provided inputs.
 }
 \details{
-Terms \verb{<DosepointName>_Duration} or \verb{<DosepointName>_Rate} could be
-used to map rate/duration columns for the current dosepoints. Term
-\verb{<ObservationName>BQL} could be used to map BQL flag for the current
-observation. \code{AMT} term could be used to map different main dosepoints (i.e.
-A1 will be mapped for \code{Gamma}, Aa for \code{First-Order} absorption etc.) If \code{AMT}
-term is used, additional terms \code{Duration} or \code{Rate} could be used; current
-function will map it to the main dosepoint of each Parameter set. But it is
-possible to map duration/rate for some dosepoint directly using terms
-\verb{<DosepointName>_Duration} or \verb{<DosepointName>_Rate}, it will override
-\code{Duration} or \code{Rate} terms mapping for current dosepoint.
+\strong{Mapping Details:}\cr
+\emph{Basic Mapping:} Maps a model variable name (e.g., \code{CObs}) to a column name
+in your data file (e.g., \code{"Concentration"}). \cr
+\emph{Shorthand Mapping:} If an element is unnamed, the Model Term is assumed
+to be the same as the Data Column Term.
+Example: \code{c(ID = "Subject", "Age", Weight = "WT")} is equivalent to
+\code{c(ID = "Subject", Age = "Age", Weight = "WT")}. \cr
+\emph{Multiple ID/Grouping Levels:} Model terms matching the pattern \verb{ID[0-9]?}
+(i.e., \code{ID}, \code{ID0}, \code{ID1}, \code{ID2}, \code{ID3}, \code{ID4}), case-insensitive, are
+automatically recognized by \code{Certara.RsNLME} as NLME sort keys/grouping
+levels. You can map up to 5 such levels. The function uses these to
+structure the model execution.  \cr
+\emph{Covariates:} If not explicitly mapped, the function attempts to map them
+using data column names that match covariate names in the model.\cr
+\emph{Mapping a List:} When using a list, each vector must map terms specific
+to its parameter set, and the list length must equal the number of parameter sets.\cr
+\emph{Special Terms:}
+\itemize{
+\item Terms \verb{<DosepointName>_Duration} or \verb{<DosepointName>_Rate}
+could be used to map rate/duration columns for the corresponding dosepoints
+(e.g., \code{A1_Rate = "InfRate"}). Term \verb{<ObservationName>BQL} could be used
+to map a BQL flag column for the corresponding observation
+(e.g., \code{CObsBQL = "ConcBQL"}). \cr
+\item The generic \code{AMT} term can be used to map the dose amount column;
+the function will automatically associate it with the primary absorption
+compartment (e.g., \code{A1} for zero-order/bolus, \code{Aa} for first-order)
+for each parameter set. \cr
+\item Generic \code{Duration} or \code{Rate} terms can be mapped (e.g., \code{Rate = "InfRate"});
+the function will associate them with the dose mapped via \code{AMT}. If a specific
+mapping like \code{A1_Rate} exists, it overrides the generic \code{Rate} mapping
+for that dosepoint (\code{A1}).\cr
+}
 }
 \examples{
 # Write model template and tokens files
@@ -87,33 +115,58 @@ TempFolder <- tempdir()
 TemplateFilePath <- file.path(TempFolder, "template.txt")
 TokensFilePath <- file.path(TempFolder, "tokens.json")
 DataFilePath <- file.path(TempFolder, "Data.csv")
-write.csv(data.frame(id = 'id',
-                     time = 'time',
-                     AMT = 'AMT',
-                     Conc = 'Conc',
-                     age = 'age',
-                     Weight = 'Weight',
-                     CObsBQL = 'CObsBQL'),
-                     DataFilePath)
-write_ModelTemplateTokens(TemplateFilePath = TemplateFilePath,
-                          TokensFilePath = TokensFilePath,
-                          Description = "1-2Cpts try",
-                          Author = "Certara",
-                          DataFilePath = DataFilePath,
-                          DataMapping = c(ID = "id",
-                                          time = "time",
-                                          CObs = "Conc",
-                                          AMT = "AMT",
-                                          "age"),
-                          ColDef = "",
-                          PMLParametersSets = PMLParametersSets,
-                          EstArgs = specify_EngineParams(method = "QRPEM"),
-                          SimArgs = specify_SimParams(numReplicates = 1000L),
-                          Tables = list(Table(Name = "simtable1.csv",
-                                              KeepSource = TRUE,
-                                              VariablesList = "C",
-                                              ForSimulation = TRUE)),
-                          OmegaSearchBlocks = list(c("nCl", "nV"), c("nCl2", "nV2")))
+# Ensure data file has columns matching the DataMapping values
+write.csv(data.frame(Subject = 'id_1', # Column for ID
+                     StudyDay = 1,      # Column for ID1
+                     time = 0,         # Column for time
+                     DoseAmt = 100,     # Column for AMT
+                     Concentration = 10.5, # Column for CObs
+                     SubjectAge = 45,   # Column for Age
+                     Weight = 70,       # Column for Weight
+                     ConcBQL = 0),      # Column for CObsBQL
+                     DataFilePath, row.names = FALSE) # Use row.names=FALSE
+
+write_ModelTemplateTokens(
+  TemplateFilePath = TemplateFilePath,
+  TokensFilePath = TokensFilePath,
+  Description = "1-2Cpts try with Multi-ID and Shorthand",
+  Author = "Certara",
+  DataFilePath = DataFilePath,
+  DataMapping = c(ID = "Subject",   # Map ID model term to Subject column
+                  ID1 = "StudyDay", # Map ID1 model term to StudyDay column
+                  time = "time",    # Map time model term to time column
+                  CObs = "Concentration", # Map CObs to Concentration
+                  AMT = "DoseAmt",  # Map generic AMT to DoseAmt
+                  "SubjectAge",     # Shorthand: Map Age model term to SubjectAge column
+                  Weight = "Weight",# Map Weight model term to Weight column
+                  CObsBQL = "ConcBQL"), # Map BQL flag
+  ColDef = "",
+  PMLParametersSets = PMLParametersSets,
+  EstArgs = specify_EngineParams(method = "QRPEM"),
+  SimArgs = specify_SimParams(numReplicates = 1000L),
+  Tables = list(Table(Name = "simtable1.csv",
+                      KeepSource = TRUE,
+                      VariablesList = "C",
+                      ForSimulation = TRUE)),
+  OmegaSearchBlocks = list(c("nCl", "nV"), c("nCl2", "nV2")))
+
+# Multiple parameter sets
+PMLParametersSets <- create_ModelPK(Absorption =c("Intravenous", "Weibull"))
+DataMapping <- list(
+  c(ID = "Subject", time = "time", Aa = "DoseAmt", CObs = "Concentration"),
+  c(ID = "Subject", time = "time", A1 = "DoseAmt", CObs = "Concentration")
+)
+
+names(DataMapping) <- names(PMLParametersSets)
+
+write_ModelTemplateTokens(
+  TemplateFilePath = TemplateFilePath,
+  TokensFilePath = TokensFilePath,
+  Description = "1 Cpt Weibull and First-Order",
+  Author = "Certara",
+  DataFilePath = DataFilePath,
+  DataMapping = DataMapping,
+  PMLParametersSets = PMLParametersSets)
 
 }
 \seealso{

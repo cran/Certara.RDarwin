@@ -1,81 +1,98 @@
-# AMT is mapped correctly 
+# Specific mapping of A1 when A1 is main absorption compartment (Single Model)
 
-    ##Description: SearchElimTypeTlag
-    ##Author: Certara
-    ##MAP   {PML[1]} id = ID time = time
-    ##MODEL {PML[2]}
-    ##ESTARGS
-    ##TABLES
-    
+    {
+      "type": "character",
+      "attributes": {},
+      "value": ["##MAP    A1 = DOSE_AMT_A1 CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"]
+    }
+
+# Specific A1 mapping takes precedence over AMT when A1 is main (Single Model)
+
+    {
+      "type": "NULL"
+    }
+
+# AMT maps to main dosepoint 'Aa' when Aa not specifically mapped (Single Model)
+
+    {
+      "type": "character",
+      "attributes": {},
+      "value": ["##MAP    Aa = DOSE_FOR_MAIN_COMP CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"]
+    }
+
+# Secondary dosepoint A1 mapped specifically, AMT maps to main Aa (Single Model)
+
+    {
+      "type": "character",
+      "attributes": {},
+      "value": ["##MAP    Aa = DOSE_FOR_MAIN_AA A1 = DOSE_FOR_SECONDARY_A1 CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"]
+    }
+
+# AMT and Specific A1/Ext mapping (Multiple Models, different mains)
+
+    NULL
 
 ---
 
     {
-      "type": "list",
-      "attributes": {
-        "names": {
-          "type": "character",
-          "attributes": {},
-          "value": ["PML"]
-        }
-      },
-      "value": [
-        {
-          "type": "list",
-          "attributes": {
-            "names": {
-              "type": "character",
-              "attributes": {},
-              "value": ["PK1FOC", "PK1GC", "PK1IGC", "PK1WC"]
-            }
-          },
-          "value": [
-            {
-              "type": "character",
-              "attributes": {
-                "names": {
-                  "type": "character",
-                  "attributes": {},
-                  "value": ["MAPText", "PMLText"]
-                }
-              },
-              "value": [" Aa = Dose CObs = CObs", "test() {\n\tcfMicro(A1, Cl / V, first = (Aa = Ka))\n\tC = A1 / V\n\tdosepoint(Aa, idosevar = AaDose, infdosevar = AaInfDose, infratevar = AaInfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\tstparm(Ka = tvKa * exp( nKa ))\n\tfixef(tvKa= c(, 1, ))\n\tranef(diag(nKa) = c(1))\n\n}"]
-            },
-            {
-              "type": "character",
-              "attributes": {
-                "names": {
-                  "type": "character",
-                  "attributes": {},
-                  "value": ["MAPText", "PMLText"]
-                }
-              },
-              "value": [" A1 = Dose CObs = CObs", "test() {\n\tdelayInfCpt(A1, MeanDelayTime, ShapeParamMinusOne, out = - Cl * C, dist = Gamma)\n\tC = A1 / V\n\tdosepoint(A1, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(MeanDelayTime = tvMeanDelayTime * exp( nMeanDelayTime ))\n\tfixef(tvMeanDelayTime= c(, 1, ))\n\tranef(diag(nMeanDelayTime) = c(1))\n\tstparm(ShapeParamMinusOne = tvShapeParamMinusOne * exp( nShapeParamMinusOne ))\n\tfixef(tvShapeParamMinusOne= c(, 1, ))\n\tranef(diag(nShapeParamMinusOne) = c(1))\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n}"]
-            },
-            {
-              "type": "character",
-              "attributes": {
-                "names": {
-                  "type": "character",
-                  "attributes": {},
-                  "value": ["MAPText", "PMLText"]
-                }
-              },
-              "value": [" A1 = Dose CObs = CObs", "test() {\n\tdelayInfCpt(A1, MeanDelayTime, ShapeParam, out = - Cl * C, dist = InverseGaussian)\n\tC = A1 / V\n\tdosepoint(A1, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(MeanDelayTime = tvMeanDelayTime * exp( nMeanDelayTime ))\n\tfixef(tvMeanDelayTime= c(, 1, ))\n\tranef(diag(nMeanDelayTime) = c(1))\n\tstparm(ShapeParam = tvShapeParam * exp( nShapeParam ))\n\tfixef(tvShapeParam= c(, 1, ))\n\tranef(diag(nShapeParam) = c(1))\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n}"]
-            },
-            {
-              "type": "character",
-              "attributes": {
-                "names": {
-                  "type": "character",
-                  "attributes": {},
-                  "value": ["MAPText", "PMLText"]
-                }
-              },
-              "value": [" A1 = Dose CObs = CObs", "test() {\n\tdelayInfCpt(A1, MeanDelayTime, ShapeParamMinusOne, out = - Cl * C, dist = Weibull)\n\tC = A1 / V\n\tdosepoint(A1, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)\n\terror(CEps = 0.1)\n\tobserve(CObs = C * (1 + CEps))\n\t\n\tstparm(MeanDelayTime = tvMeanDelayTime * exp( nMeanDelayTime ))\n\tfixef(tvMeanDelayTime= c(, 1, ))\n\tranef(diag(nMeanDelayTime) = c(1))\n\tstparm(ShapeParamMinusOne = tvShapeParamMinusOne * exp( nShapeParamMinusOne ))\n\tfixef(tvShapeParamMinusOne= c(, 1, ))\n\tranef(diag(nShapeParamMinusOne) = c(1))\n\tstparm(Cl = tvCl * exp( nCl ))\n\tfixef(tvCl= c(, 1, ))\n\tranef(diag(nCl) = c(1))\n\tstparm(V = tvV * exp( nV ))\n\tfixef(tvV= c(, 1, ))\n\tranef(diag(nV) = c(1))\n\n}"]
-            }
-          ]
-        }
-      ]
+      "type": "NULL"
     }
+
+# Generic 'Rate' maps to MainDosepoint_Rate when AMT is used (Single Model)
+
+    [1] "##MAP    Aa = DOSE_MAIN Aa_Rate = INF_RATE CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"
+
+# Generic 'Duration' maps to MainDosepoint_Duration when AMT is used (Single Model)
+
+    [1] "##MAP    Aa = DOSE_MAIN Aa_Duration = INF_DUR CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"
+
+# Specific 'A1_Rate' maps correctly when A1 is main (Single Model)
+
+    [1] "##MAP    A1 = DOSE_A1 A1_Rate = RATE_FOR_A1 CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"
+
+# Specific 'A1_Duration' maps correctly when A1 is main (Single Model)
+
+    [1] "##MAP    A1 = DOSE_A1 A1_Duration = DUR_FOR_A1 CObs = CONC_OBS id = SUBJ_ID time = TIME_VAL"
+
+# Mixed generic/specific Rate/Duration with multiple models and Ext mapped
+
+    NULL
+
+---
+
+    {
+      "type": "NULL"
+    }
+
+# Unmapped covariate 'WT' is auto-mapped if data column exists (Single Model)
+
+    NULL
+
+# Cat Cov (Named) generates correct MAP block
+
+    [1] "##MAP  Sex=Gender(Male = 0, Female = 1)  A1 = Amount CObs = Conc id = Subject time = Act_Time"
+
+# Cat Cov (Unnamed/Map Def) generates correct MAP block
+
+    [1] "##MAP  Sex=Gender(female = 0, male = 1)  A1 = Amount CObs = Conc id = Subject time = Act_Time"
+
+# Occ Cov (Named) generates correct MAP block
+
+    [1] "##MAP  Period=StudyPeriod(Period1 = 1, Period2 = 2)  A1 = Dose CObs = CObs id = ID time = time"
+
+# Occ Cov (Unnamed/Map Def) generates correct MAP block
+
+    [1] "##MAP  Period=StudyPeriod(P1=1, P2=2)  A1 = Dose CObs = CObs id = ID time = time"
+
+# Continuous Cov and IGNORE generate correct MAP block
+
+    [1] "##MAP  Age=SubjectAge  A1 = Dose CObs = CObs id = ID time = time IGNORE = UnusedColumn"
+
+# gen_MAP warns when model's named categories are overridden by mapping definition
+
+    [1] "##MAP  Sex=Gender(M=0, F=1)  A1 = AMT CObs = DV id = ID time = TIME"
+
+---
+
+    [1] "##MAP  Sex=Gender_COL(M=0, F=1)  A1 = AMT_COL CObs = DV_COL id = ID time = TIME"
 

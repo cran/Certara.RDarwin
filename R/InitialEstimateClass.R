@@ -127,7 +127,13 @@ validate_InitialEstimate <- function(InitialEstimateInstance) {
 #' @export
 InitialEstimate <- function(Initial = numeric(),
                             ...) {
-  EstimateList <- .extract_EstimateFromInitial(Initial)
+  if (!missing(Initial)) {
+    EstimateList <- .extract_EstimateFromInitial(Initial)
+  } else {
+    EstimateList <- list(Lower = numeric(0),
+                         Estimate = numeric(0),
+                         Upper = numeric(0))
+  }
 
   dots <- eval(substitute(alist(...), env = environment()))
   if (length(dots) > 0) {
@@ -137,6 +143,8 @@ InitialEstimate <- function(Initial = numeric(),
       EstimateList$Estimate <- c(EstimateList$Estimate, EstimateListDots$Estimate)
       EstimateList$Upper <- c(EstimateList$Upper, EstimateListDots$Upper)
     }
+  } else if (length(unlist(EstimateList)) == 0) {
+    stop("No initial estimates provided. Please provide at least one initial estimate.")
   }
 
   InitialEstimateInstance <- new_InitialEstimate(Lower = EstimateList$Lower,

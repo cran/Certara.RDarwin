@@ -3,18 +3,16 @@
     Code
       ClOmegasExplicit
     Output
-      stparm(Cl = tvCl * exp( nCl {Cl_Period[1]} ))
+      stparm(Cl = tvCl {_nCl[1]})
       	fixef(tvCl= c(, 1, ))
-      	ranef(diag(nCl) = c(1))
-      	{Cl_Period[2]} 
+      	{_nCl[2]} 
 
 ---
 
     Code
       ClOmegasImplicit
     Output
-      stparm(Cl = tvCl * exp( nCl {Cl_Period[1]} ))
+      stparm(Cl = tvCl {_nCl[1]})
       	fixef(tvCl= c(, 1, ))
-      	ranef(diag(nCl) = c(1))
-      	{Cl_Period[2]} 
+      	{_nCl[2]} 
 

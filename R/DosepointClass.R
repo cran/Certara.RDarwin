@@ -1,30 +1,16 @@
-.check_StparmString <- function(classInstance) {
+.check_StparmExpression <- function(classInstance) {
   if (length(classInstance) > 0 &
       (!inherits(classInstance, "StParm") &
-       !inherits(classInstance, "character"))) {
+       !inherits(classInstance, "Expression"))) {
     message(paste(
       as.character(substitute(classInstance, env = environment())),
-      "should be StParm or character class."
+      "should be StParm or Expression class."
     ))
     FALSE
   } else {
     TRUE
   }
 }
-
-.check_Stparm <- function(classInstance) {
-  if (length(classInstance) > 0 &
-      (!inherits(classInstance, "StParm"))) {
-    message(paste(as.character(
-      substitute(classInstance, env = environment())
-    ),
-    "should be StParm class."))
-    FALSE
-  } else {
-    TRUE
-  }
-}
-
 
 #' Create a new Dosepoint object
 #'
@@ -57,11 +43,31 @@ new_Dosepoint <- function(DosepointName = character(),
               .check_0nzchar(DosepointName))
   stopifnot(is.character(PMLStructure))
 
+  if (inherits(tlag, "character")) {
+    tlag <- Expression(tlag)
+    message("tlag converted to expression for dosepoint ", DosepointName)
+  }
+
+  if (inherits(bioavail, "character")) {
+    bioavail <- Expression(bioavail)
+    message("bioavail converted to expression for dosepoint ", DosepointName)
+  }
+
+  if (inherits(duration, "character")) {
+    duration <- Expression(duration)
+    message("duration converted to expression for dosepoint ", DosepointName)
+  }
+
+  if (inherits(rate, "character")) {
+    rate <- Expression(rate)
+    message("rate converted to expression for dosepoint ", DosepointName)
+  }
+
   if (!all(
-    .check_Stparm(tlag),
-    .check_Stparm(bioavail),
-    .check_StparmString(duration),
-    .check_StparmString(rate)
+    .check_StparmExpression(tlag),
+    .check_StparmExpression(bioavail),
+    .check_StparmExpression(duration),
+    .check_StparmExpression(rate)
   )) {
     stop("Cannot create ", DosepointName, " class.")
   }
@@ -117,37 +123,49 @@ validate_Dosepoint <- function(DosepointInstance) {
 #'
 #' @param DosepointName A character string giving the name of the Dosepoint.
 #' @param State A character string giving the state of the Dosepoint, must be
-#'   one of "None", "Present", "Searched".
-#' @param tlag An optional structural parameter giving the time lag for the
-#'   doses coming into current Dosepoint.
-#' @param bioavail An optional structural parameter giving the bioavailability
-#'   of the doses coming into current Dosepoint.
-#' @param duration An optional structural parameter giving the duration of
-#'   infusion for the doses coming into current Dosepoint.
-#' @param rate An optional structural parameter giving the rate of infusion for
-#'   the doses coming into current Dosepoint.
-#' @param State A character string representing the state of the Dosepoint.
-#'   Possible values are:
-#'   * `None`: current Dosepoint is not used.
-#'   * `Present` (the default): current Dosepoint is used as is.
-#'   * `Searched`: current Dosepoint is added as a token to be searched.
-#' @param PMLStructure A character string that indicates bounded PML structure.
+#'   one of "None", "Present", "Searched". Default is "Present".
+#' @param tlag An optional parameter for the time lag. Can be an
+#'   \code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+#'   character string (which will be converted to an Expression).
+#' @param bioavail An optional parameter for bioavailability. Can be an
+#'   \code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+#'   character string (which will be converted to an Expression).
+#' @param duration An optional parameter for the duration of infusion. Can be an
+#'   \code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+#'   character string (which will be converted to an Expression).
+#' @param rate An optional parameter for the rate of infusion. Can be an
+#'   \code{\link{StParm}} object, an \code{\link{Expression}} object, or a
+#'   character string (which will be converted to an Expression).
+#' @param PMLStructure A character string that indicates a specific PML structure
+#'   this Dosepoint definition should be associated with.
 #'
-#' @return A new Dosepoint object
+#' @return A new Dosepoint object.
 #'
 #' @family Dosepoints
-#' @seealso [list_Dosepoints()]
+#' @seealso [list_Dosepoints()], [add_Dosepoint()], [modify_Dosepoint()], [StParm()], [Expression()]
 #'
 #' @examples
+#' # Using StParm objects
 #' TlagStParm <- StParm("Tlag",
 #'                      Type = "LogNormal",
-#'                      ThetaStParm = Theta(Name = "tvTlag",
-#'                                          InitialEstimates = 0.1))
+#'                      ThetaStParm = Theta(Name = "tvTlag", InitialEstimates = 0.1))
+#' FStParm <- StParm("F", ThetaStParm = Theta(Name = "tvF")) # Assuming Theta exists
 #'
-#' A1 <- Dosepoint(DosepointName = "A1",
-#'                 State = "Present",
-#'                 tlag = TlagStParm,
-#'                 bioavail = StParm("F"))
+#' dp1 <- Dosepoint(DosepointName = "GutInput",
+#'                  State = "Present",
+#'                  tlag = TlagStParm,
+#'                  bioavail = FStParm)
+#'
+#' # Using Expression objects
+#' dp2 <- Dosepoint(DosepointName = "Infusion",
+#'                  rate = Expression("RateVal",
+#'                                    ContainedStParms =
+#'                                      list(StParm("RateVal",
+#'                                                  ThetaStParm = Theta("tvRateVal")))))
+#'
+#' # Using a character string (will be converted to Expression internally)
+#' dp3 <- Dosepoint(DosepointName = "Bolus",
+#'                  bioavail = "SystemicF") # Converted to Expression("SystemicF")
 #'
 #' @export
 Dosepoint <- function(DosepointName = "A1",
@@ -179,28 +197,43 @@ Dosepoint <- function(DosepointName = "A1",
 
 .get_ParameterValue <- function(x, ParameterName) {
   if (length(x[[ParameterName]]) > 0) {
-    if (inherits(x[[ParameterName]], "StParm")) {
       if (x[[ParameterName]]$State == "None") {
         Value <- ""
       } else {
-        Value <-
-          paste(", ", ParameterName, "=", x[[ParameterName]]$StParmName)
+        if (inherits(x[[ParameterName]], "StParm")) {
+          Value <-
+            paste(",", ParameterName, "=", x[[ParameterName]]$StParmName)
+        } else {
+          # expression
+          Value <-
+            paste(",", ParameterName, "=", output(x[[ParameterName]]))
+        }
+
         if (x[[ParameterName]]$State == "Searched") {
-          Value <- add_TokensNLME(
-            TokenName = paste("", #x$PMLStructure,
-                              x[[ParameterName]]$StParmName,
-                              sep = "_"),
-            ListElementName = "StParm",
-            TokenValues = c("", Value),
-            DoNotChangeTokenListMain = FALSE
-          )
+          ExprType <- ifelse(inherits(x[[ParameterName]], "StParm"), "StParm", "Expression")
+          if (ExprType == "StParm") {
+            Value <- add_TokensNLME(
+              TokenName = paste0("_",
+                                x[[ParameterName]]$StParmName),
+              ListElementName = ExprType,
+              TokenValues = c("", Value),
+              DoNotChangeTokenListMain = FALSE
+            )
+          } else { # expression
+            Value <- add_TokensNLME(
+              TokenName = paste(x$DosepointName,
+                                ParameterName,
+                                ExprType,
+                                sep = "_"),
+              ListElementName = ExprType,
+              TokenValues = c("", Value),
+              DoNotChangeTokenListMain = FALSE
+            )
+
+          }
         }
 
       }
-    } else {
-      # character
-      Value <- paste(", ", ParameterName, "=", x[[ParameterName]])
-    }
   } else {
     Value <- ""
   }
@@ -210,7 +243,7 @@ Dosepoint <- function(DosepointName = "A1",
 
 #' Generate output for Dosepoint object
 #'
-#' Generates the output for a Dosepoint object, including the dosepoint statement for the NONMEM model.
+#' Generates the output for a Dosepoint object
 #'
 #' @param x A Dosepoint object.
 #' @param ... Additional arguments (currently unused).
@@ -219,7 +252,7 @@ Dosepoint <- function(DosepointName = "A1",
 #'
 #' @examples
 #' A1 <- Dosepoint(DosepointName = "A1", State = "Present", tlag = "Tlag", bioavail = StParm("F"))
-#' output(dose)
+#' output(A1)
 #'
 #' @noRd
 #' @keywords internal NLME
@@ -253,11 +286,34 @@ output.Dosepoint <- function(x, ...) {
     )
 
   for (DosepointArg in c("tlag", "bioavail", "duration", "rate")) {
-    if (!is.null(x[[DosepointArg]]) &
-        inherits(x[[DosepointArg]], "StParm")) {
-      DosepointValue <- paste(DosepointValue,
-                              output(x[[DosepointArg]]),
-                              sep = "\n\t")
+    if (!is.null(x[[DosepointArg]])) {
+      if (inherits(x[[DosepointArg]], "StParm")) {
+        DosepointValue <- paste(DosepointValue,
+                                output(x[[DosepointArg]]),
+                                sep = "\n\t")
+
+      } else if (inherits(x[[DosepointArg]], "Expression")) {
+        for (StParmInstance in x[[DosepointArg]]$ContainedStParms) {
+          Value <- output(StParmInstance)
+          if (x[[DosepointArg]]$State == "Searched") {
+            # we allow the stparm in the expression only in the state 'Present'
+            # but the expression could be searched
+            Value <- add_TokensNLME(
+              TokenName = paste(x$DosepointName,
+                                DosepointArg,
+                                "Expression",
+                                sep = "_"),
+              ListElementName = "Expression",
+              TokenValues = c("", Value),
+              DoNotChangeTokenListMain = FALSE
+            )
+          }
+
+          DosepointValue <- paste(DosepointValue,
+                                  Value,
+                                  sep = "\n\t")
+        }
+      }
     }
   }
 

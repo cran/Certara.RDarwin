@@ -3,7 +3,7 @@
     Code
       DosepointInstance
     Output
-      dosepoint(A1,  tlag = Tlag,  bioavail = F,  duration = D, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)
+      dosepoint(A1, tlag = Tlag, bioavail = F, duration = D, idosevar = A1Dose, infdosevar = A1InfDose, infratevar = A1InfRate)
       	stparm(Tlag = tvTlag * exp( nTlag ))
       	fixef(tvTlag= c(, 1, ))
       	ranef(diag(nTlag) = c(1))

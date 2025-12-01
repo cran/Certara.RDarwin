@@ -23,15 +23,17 @@ new_StParm <- function(StParmName = character(),
   stopifnot(is.character(StParmName) & .check_0nzchar(StParmName))
 
   Type <-
-    match.arg(Type,
-              c(
-                "LogNormal",
-                "LogNormal1",
-                "LogNormal2",
-                "LogitNormal",
-                "Normal"
-              ),
-              several.ok = TRUE)
+    match.arg(
+      Type,
+      c(
+        "LogNormal",
+        "LogNormal1",
+        "LogNormal2",
+        "LogitNormal",
+        "Normal"
+      ),
+      several.ok = TRUE
+    )
 
   State <- match.arg(State)
 
@@ -188,10 +190,12 @@ StParm <- function(StParmName = character(),
           OmegaName <- CovariateInstance$Omegas[[OmegaInstanceIndex]]$Name
           if (nchar(OmegaName) > 3 &
               substr(OmegaName, 1, 3) == "n__") {
-            NewOmegaName <- paste0("n",
-                                   StParmInstance$StParmName,
-                                   CovariateInstance$Name,
-                                   substring(OmegaName, 4))
+            NewOmegaName <- paste0(
+              "n",
+              StParmInstance$StParmName,
+              CovariateInstance$Name,
+              substring(OmegaName, 4)
+            )
             StParmInstance$Covariates[[CovariateInstance$Name]]$Omegas[[OmegaInstanceIndex]]$Name <-
               NewOmegaName
             names(StParmInstance$Covariates[[CovariateInstance$Name]]$Omegas[OmegaInstanceIndex]) <-
@@ -264,7 +268,7 @@ StParm <- function(StParmName = character(),
     }
 
     StParmInstance
-}
+  }
 
 .assign_TextToVariable <-
   function(ParmList, VariableName, VariableText) {
@@ -291,24 +295,29 @@ StParm <- function(StParmName = character(),
     ParmList
   }
 
-.modify_OmegaExpression <- function(x, FullOmegaExpression, OmegaText) {
-  if (is.null(x$OmegaStParm) || nchar(OmegaText) == 0) {
-    FullOmegaExpression <- ""
-  } else if (x$OmegaStParm$State == "Searched") {
-    FullOmegaExpression <- add_TokensNLME(
-      TokenName = paste(
-        "", #x$PMLStructure, x$StParmName,
-        x$OmegaStParm$Name,
-        sep = "_"
-      ),
-      ListElementName = "vOmega",
-      TokenValues = c("", FullOmegaExpression),
-      DoNotChangeTokenListMain = FALSE
-    )
-  }
+.modify_OmegaExpression <-
+  function(x, FullOmegaExpression, OmegaText) {
+    if (length(OmegaText) == 0) {
+      return("")
+    }
 
-  FullOmegaExpression
-}
+    # blank should remain blank
+    FullOmegaExpression[OmegaText == ""] <- ""
+
+    if (length(OmegaText) > 1) {
+      FullOmegaExpression <-
+        add_TokensNLME(
+          TokenName = paste("", #x$PMLStructure, x$StParmName,
+                            x$OmegaStParm$Name,
+                            sep = "_"),
+          ListElementName = "Ranefs",
+          TokenValues = FullOmegaExpression,
+          DoNotChangeTokenListMain = FALSE
+        )
+    }
+
+    FullOmegaExpression
+  }
 
 #' @noRd
 #' @keywords internal NLME
@@ -380,26 +389,36 @@ ouptut_StParmOneType <- function(x) {
   ThetaSum <- x$ThetaStParm$Name
   if (x$OmegaStParm$State == "None") {
     OmegaText <- ""
-  } else {
+    Ranefs <- ""
+  } else if (x$OmegaStParm$State == "Present") {
     OmegaText <-  x$OmegaStParm$Name
+    Ranefs <- output(x$OmegaStParm)
+  } else {
+    # searched
+    OmegaText <- c("", x$OmegaStParm$Name)
+    OmegaPresented <- x$OmegaStParm
+    OmegaPresented$State <- "Present"
+    Ranefs <- c("", output(OmegaPresented))
   }
 
   Fixefs <- output(x$ThetaStParm)
-  Ranefs <- output(x$OmegaStParm)
 
   for (CovariateInstance in x$Covariates) {
     CurrentFixef <- c()
-    CurrentRanef <- c()
+    # CurrentRanef <- c()
 
     if (CovariateInstance$State == "None")
       next
+
     if (CovariateInstance$Type == "Continuous") {
       if (CovariateInstance$Center != "None") {
         CenteredCovariate <-
-          paste0("(",
-                 CovariateInstance$Name,
-                 CovariateCentering,
-                 tolower(CovariateInstance$Center))
+          paste0(
+            "(",
+            CovariateInstance$Name,
+            CovariateCentering,
+            tolower(CovariateInstance$Center)
+          )
 
         if (CovariateInstance$Center %in% c("Median", "Mean")) {
           CenteredCovariate <-
@@ -444,41 +463,62 @@ ouptut_StParmOneType <- function(x) {
         CovariateText <-
           paste0(CovariateText, ThetaCovariateRelation, CategoryText)
 
-        CurrentFixef <- paste(CurrentFixef, output(CovariateInstance$Thetas[[CategoryIndex - 1]]), sep = "\n\t")
+        CurrentFixef <-
+          paste(CurrentFixef,
+                output(CovariateInstance$Thetas[[CategoryIndex - 1]]),
+                sep = "\n\t")
       }
 
     } else if (CovariateInstance$Type == "Occasion") {
-      CovariateText <- ""
-      for (CategoryIndex in seq_along(CovariateInstance$Categories)) {
-        CategoryText <-
-          paste0(
-            "(",
-            CovariateInstance$Name,
-            "==",
-            CovariateInstance$Categories[CategoryIndex],
-            ")*",
-            CovariateInstance$Omegas[[CategoryIndex]]$Name
-          )
-
-        if (OmegaText == "" && CategoryIndex == 1) {
-          # no omegas, but occasion
-          CovariateText <- CategoryText
-        } else {
-          CovariateText <-
-            paste0(CovariateText, OmegaCovariateRelation, CategoryText)
-        }
-
-        if (CategoryIndex == 1) {
-          CurrentRanef <- output(CovariateInstance$Omegas[[CategoryIndex]])
-          # need to concatenate with same()
-          CurrentRanef <- substr(CurrentRanef, 1, nchar(CurrentRanef) - 1)
-        } else {
-          CurrentRanef <- paste(CurrentRanef,
-                                paste0(", same(", CovariateInstance$Omegas[[CategoryIndex]]$Name, ")"))
-        }
+      if (CovariateInstance$State == "Searched") {
+        # need to double records
+        OmegaText <- c(OmegaText, OmegaText)
+        Ranefs <- c(Ranefs, Ranefs)
+        OmegaTokenIndicesToAdd <-
+          (length(OmegaText) / 2 + 1):length(OmegaText)
+      } else {
+        OmegaTokenIndicesToAdd <- 1:length(OmegaText)
       }
 
-      CurrentRanef <- paste0(CurrentRanef, ")")
+      for (OmegaTokenIndex in OmegaTokenIndicesToAdd) {
+        for (CategoryIndex in seq_along(CovariateInstance$Categories)) {
+          CategoryText <-
+            paste0(
+              "(",
+              CovariateInstance$Name,
+              "==",
+              CovariateInstance$Categories[CategoryIndex],
+              ")*",
+              CovariateInstance$Omegas[[CategoryIndex]]$Name
+            )
+
+          if (OmegaText[OmegaTokenIndex] == "" &&
+              CategoryIndex == 1) {
+            # no omegas, but occasion
+            OmegaText[OmegaTokenIndex] <- CategoryText
+          } else {
+            OmegaText[OmegaTokenIndex] <-
+              paste0(OmegaText[OmegaTokenIndex], OmegaCovariateRelation, CategoryText)
+          }
+
+          if (CategoryIndex == 1) {
+            Ranefs[OmegaTokenIndex] <-
+              paste(Ranefs[OmegaTokenIndex],
+                    output(CovariateInstance$Omegas[[CategoryIndex]]),
+                    sep = "\n\t")
+            # need to concatenate with same()
+            Ranefs[OmegaTokenIndex] <-
+              substr(Ranefs[OmegaTokenIndex], 1, nchar(Ranefs[OmegaTokenIndex]) - 1)
+          } else {
+            Ranefs[OmegaTokenIndex] <- paste(Ranefs[OmegaTokenIndex],
+                                             paste0(", same(", CovariateInstance$Omegas[[CategoryIndex]]$Name, ")"))
+          }
+        }
+
+        Ranefs[OmegaTokenIndex] <-
+          paste0(Ranefs[OmegaTokenIndex], ")")
+      }
+
 
     } else {
       stop("Unknown ", CovariateInstance$Type)
@@ -488,12 +528,10 @@ ouptut_StParmOneType <- function(x) {
       if (CovariateInstance$State == "Searched") {
         CovariateText <-
           add_TokensNLME(
-            TokenName = paste(
-              #CovariateInstance$PMLStructure,
+            TokenName = paste(#CovariateInstance$PMLStructure,
               x$StParmName,
               CovariateInstance$Name,
-              sep = "_"
-            ),
+              sep = "_"),
             ListElementName = "CovThetaInStParm",
             TokenValues = c("", CovariateText),
             DoNotChangeTokenListMain = FALSE
@@ -501,12 +539,10 @@ ouptut_StParmOneType <- function(x) {
 
         CurrentFixef <-
           add_TokensNLME(
-            TokenName = paste(
-              #CovariateInstance$PMLStructure,
+            TokenName = paste(#CovariateInstance$PMLStructure,
               x$StParmName,
               CovariateInstance$Name,
-              sep = "_"
-            ),
+              sep = "_"),
             ListElementName = "CovThetaInFixef",
             TokenValues = c("", CurrentFixef),
             DoNotChangeTokenListMain = FALSE
@@ -515,73 +551,97 @@ ouptut_StParmOneType <- function(x) {
 
       ThetaSum <- paste(ThetaSum, CovariateText)
       Fixefs <- paste(Fixefs, CurrentFixef, sep = "\n\t")
-    } else {
-      if (CovariateInstance$State == "Searched") {
-        CovariateText <-
-          add_TokensNLME(
-            TokenName = paste(
-              #CovariateInstance$PMLStructure,
-              x$StParmName,
-              CovariateInstance$Name,
-              sep = "_"
-            ),
-            ListElementName = "CovOmegaInStParm",
-            TokenValues = c("", CovariateText),
-            DoNotChangeTokenListMain = FALSE
-          )
-
-        CurrentRanef <-
-          add_TokensNLME(
-            TokenName = paste(
-              #CovariateInstance$PMLStructure,
-              x$StParmName,
-              CovariateInstance$Name,
-              sep = "_"
-            ),
-            ListElementName = "CovOmegaInRanef",
-            TokenValues = c("", CurrentRanef),
-            DoNotChangeTokenListMain = FALSE
-          )
-      }
-
-      OmegaText <- paste(OmegaText, CovariateText)
-      Ranefs <- paste(Ranefs, CurrentRanef, sep = "\n\t")
     }
+    #   if (CovariateInstance$State == "Searched") {
+    #     CovariateText <-
+    #       add_TokensNLME(
+    #         TokenName = paste(
+    #           #CovariateInstance$PMLStructure,
+    #           x$StParmName,
+    #           CovariateInstance$Name,
+    #           sep = "_"
+    #         ),
+    #         ListElementName = "CovOmegaInStParm",
+    #         TokenValues = c("", CovariateText),
+    #         DoNotChangeTokenListMain = FALSE
+    #       )
+    #
+    #     CurrentRanef <-
+    #       add_TokensNLME(
+    #         TokenName = paste(
+    #           #CovariateInstance$PMLStructure,
+    #           x$StParmName,
+    #           CovariateInstance$Name,
+    #           sep = "_"
+    #         ),
+    #         ListElementName = "CovOmegaInRanef",
+    #         TokenValues = c("", CurrentRanef),
+    #         DoNotChangeTokenListMain = FALSE
+    #       )
+    #   }
+    #
+    #   OmegaText <- paste(OmegaText, CovariateText)
+    #   Ranefs <- paste(Ranefs, CurrentRanef, sep = "\n\t")
+    # }
   }
 
   if (x$Type == "LogNormal") {
     # stparm(V = tvV * wt^dVdwt * exp(nV + nVx0*(sex==0) + nVx1*(sex==1)))
     FullOmegaExpression <- paste("* exp(", OmegaText, ")")
-    FullOmegaExpression <- .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
+
+    FullOmegaExpression <-
+      .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
 
     StParmText <- paste(ThetaSum, FullOmegaExpression)
   } else if (x$Type == "Normal") {
     # stparm(V = tvV + wt*dVdwt + nV + nVx0*(sex==0) + nVx1*(sex==1))
     FullOmegaExpression <- paste("+", OmegaText)
-    FullOmegaExpression <- .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
+    FullOmegaExpression[OmegaText == ""] <- ""
+    FullOmegaExpression <-
+      .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
 
     StParmText <- paste(ThetaSum, FullOmegaExpression)
   } else if (x$Type == "LogNormal1") {
     # stparm(V = (tvV + wt*dVdwt) * exp(nV + nVx0*(sex==0) + nVx1*(sex==1)))
     FullOmegaExpression <- paste("* exp(", OmegaText, ")")
-    FullOmegaExpression <- .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
+
+    FullOmegaExpression <-
+      .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
 
     StParmText <- paste("(", ThetaSum, ")", FullOmegaExpression)
   } else if (x$Type == "LogNormal2") {
     # stparm(V = exp(tvV + wt*dVdwt + nV + nVx0*(sex==0) + nVx1*(sex==1)))
     FullOmegaExpression <- paste("+", OmegaText)
-    FullOmegaExpression <- .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
+
+    FullOmegaExpression <-
+      .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
 
     StParmText <- paste("exp(", ThetaSum, FullOmegaExpression, ")")
   } else if (x$Type == "LogitNormal") {
     # stparm(V = ilogit(tvV + wt*dVdwt + nV + nVx0*(sex==0) + nVx1*(sex==1)))
     FullOmegaExpression <- paste("+", OmegaText)
-    FullOmegaExpression <- .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
 
-    StParmText <- paste("ilogit(", ThetaSum, FullOmegaExpression, ")")
+    FullOmegaExpression <-
+      .modify_OmegaExpression(x, FullOmegaExpression, OmegaText)
+
+    StParmText <-
+      paste("ilogit(", ThetaSum, FullOmegaExpression, ")")
   }
 
-  StParmText <- paste0("stparm(", x$StParmName, " = ", StParmText, ")")
+  StParmText <-
+    paste0("stparm(", x$StParmName, " = ", StParmText, ")")
+
+  if (length(Ranefs) > 1) {
+    Ranefs <- add_TokensNLME(
+      TokenName = paste("", #x$PMLStructure, x$StParmName,
+                        x$OmegaStParm$Name,
+                        sep = "_"),
+      ListElementName = "Ranefs",
+      TokenValues = Ranefs,
+      DoNotChangeTokenListMain = FALSE
+    )
+  }
+
   StParmText <- paste(StParmText,
                       Fixefs,
                       Ranefs,

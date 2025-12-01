@@ -2,28 +2,34 @@
 % Please edit documentation in R/specify_EngineParams.R
 \name{specify_EngineParams}
 \alias{specify_EngineParams}
-\title{Specify engine parameters for model execution}
+\title{Specify Engine Parameters for NLME Model Execution}
 \usage{
 specify_EngineParams(
   sort = FALSE,
-  ODE = c("MatrixExponent", "DVERK", "DOPRI5", "AutoDetect", "Stiff"),
+  ODE = c("MatrixExponent", "DVERK", "DOPRI5", "AutoDetect", "Stiff", "LSODE"),
   rtolODE = 1e-06,
   atolODE = 1e-06,
   maxStepsODE = 50000L,
   numIterations = 1000L,
   method = c("FOCE-ELS", "QRPEM", "Laplacian", "Naive-Pooled", "FOCE-LB", "IT2S-EM",
     "FO"),
-  stdErr = c("Sandwich", "Auto-Detect", "Hessian", "Fisher-Score", "None"),
+  stdErr = c("Sandwich", "Hessian", "Fisher-Score", "Auto-Detect", "None"),
   isCentralDiffStdErr = TRUE,
   stepSizeStdErr = 0.01,
+  logTransform = NULL,
   numIntegratePtsAGQ = 1L,
   numIterNonParametric = 0L,
-  allowSyntheticGradient = FALSE,
+  fastOptimization = FALSE,
   numIterMAPNP = 0L,
   numRepPCWRES = 0L,
   stepSizeLinearize = 0.002,
   numDigitLaplacian = 7L,
   numDigitBlup = 13L,
+  gradTolOuter = 2e-04,
+  stepTolOuter = 1e-04,
+  gradTolInner = 1.71e-05,
+  stepTolInner = 7.07e-08,
+  refDeltaLagl = 0.001,
   mapAssist = 0L,
   iSample = 300L,
   iAcceptRatio = 0.1,
@@ -34,189 +40,249 @@ specify_EngineParams(
   freezeOmega = FALSE,
   MCPEM = FALSE,
   runAllIterations = FALSE,
-  scramble = c("Owen", "Tezuka-Faur", "None")
+  scramble = c("Owen", "Tezuka-Faur", "None"),
+  emTolType = 0L,
+  emConvLen = 10L,
+  emConvCritVal = 5,
+  stepSizePartialDeriv = 1e-05,
+  numTimeStepPartialDeriv = 20L
 )
 }
 \arguments{
-\item{sort}{Logical; Specifying whether or not to sort the input data by
-subject and time values. Default is \code{TRUE}.}
+\item{sort}{Logical; Specifies whether to sort the input data by subject and
+time. \strong{Default: \code{FALSE}}. (Note: NLME/RsNLME may default to \code{TRUE} if
+model has no reset info). Included in output only if set to \code{TRUE}.}
 
-\item{ODE}{Character; Specifying the solver used to numerically solve
-Ordinary Differential Equations (ODEs). Options are
+\item{ODE}{Character; Specifies the ODE solver. Options: \code{"MatrixExponent"},
+\code{"DVERK"}, \code{"DOPRI5"}, \code{"AutoDetect"}, \code{"Stiff"}, \code{"LSODE"}. \strong{Default:
+\code{"MatrixExponent"}}. \code{"AutoDetect"} and \code{"LSODE"} use LSODA. \code{"Stiff"} is
+LSODE configured for stiff systems.}
+
+\item{rtolODE}{Numeric; Relative tolerance for the ODE solver.
+\strong{Default: \code{1e-6}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
+
+\item{atolODE}{Numeric; Absolute tolerance for the ODE solver.
+\strong{Default: \code{1e-6}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
+
+\item{maxStepsODE}{Integer; Maximum number of steps for the ODE solver.
+\strong{Default: \code{50000L}}. \emph{(Not applicable if \code{ODE = "MatrixExponent"})}.}
+
+\item{numIterations}{Integer; Maximum number of estimation iterations (max:
+10000).
+\strong{Default: \code{1000L}}.}
+
+\item{method}{Character; Estimation method. Options: \code{"FOCE-ELS"}, \code{"QRPEM"},
+\code{"Laplacian"}, \code{"Naive-Pooled"}, \code{"FOCE-LB"}, \code{"IT2S-EM"}, \code{"FO"}.
+\strong{Default: \code{"FOCE-ELS"}}. (Note: NLME/RsNLME default depends on model type).
+Only \code{"Naive-Pooled"} is valid for individual models.}
+
+\item{stdErr}{Character; Standard error computation method. Options:
+\code{"Sandwich"}, \code{"Hessian"}, \code{"Fisher-Score"}, \code{"Auto-Detect"}, \code{"None"}.
+\strong{Default:} \code{"Sandwich"} (for most methods), \code{"Fisher-Score"} (if \code{method="QRPEM"}),
+\code{"None"} (if \code{method="IT2S-EM"}). The default applied depends on the chosen
+\code{method}. See \code{Certara.RsNLME::engineParams} documentation for full
+details.}
+
+\item{isCentralDiffStdErr}{Logical; Use central (\code{TRUE}) or forward (\code{FALSE})
+difference for numerical standard error calculations. \strong{Default: \code{TRUE}}.}
+
+\item{stepSizeStdErr}{Numeric; Relative step size for numerical Hessian
+computation for standard errors. Must be positive. \strong{Default: \code{0.01}}.
+(Note: NLME/RsNLME default differs for Naive-Pooled method).}
+
+\item{logTransform}{Logical or NULL; Controls log-transformation behavior for
+models with log-additive residual error (e.g., C*exp(epsilon)).
+\strong{Default: \code{NULL}}.
+If set to \code{TRUE} or \code{FALSE} (i.e., not \code{NULL}), the \code{logTransform=VALUE}
+pair is included in the output string. The NLME engine interprets this
+parameter based on the model structure.
 \itemize{
-\item \code{MatrixExponent} (the default),
-\item \code{DVERK},
-\item \code{DOPRI5},
-\item \code{AutoDetect},
-\item \code{Stiff}.
-}
-
-Note: both \code{DVERK} and \code{DOPRI5} are non-stiff solvers. NLME will
-automatically switches to \code{DVERK} if ODEs are nonlinear.}
-
-\item{rtolODE}{Numeric; Specifying relative tolerance for the ODE solver.
-Not applicable when \code{ODE == MatrixExponent}.}
-
-\item{atolODE}{Numeric; Specifying absolute tolerance for the ODE solver.}
-
-\item{maxStepsODE}{Numeric; Specifying maximum number of allowable steps or
-function evaluations for the ODE solver.}
-
-\item{numIterations}{Numeric; Specifying maximum number of iterations for
-estimation.}
-
-\item{method}{Character; Specifying engine method for estimation. Options
-are:
+\item For models with a \strong{single log-additive residual error}:
 \itemize{
-\item \code{FOCE-ELS} (the default),
-\item \code{QRPEM},
-\item \code{Laplacian},
-\item \code{Naive-Pooled},
-\item \code{FOCE-LB},
-\item \code{IT2S-EM},
-\item \code{FO}.
+\item \code{NULL} or \code{TRUE}: Enables fitting in the log-domain (LTBS approach).
+\item \code{FALSE}: The log-additive error is treated as proportional during fitting.
 }
-
-Note: if model involves any discontinuous observed variable (e.g., count
-data) or BQL data, NLME will switch from default method \code{FOCE-ELS} to
-\code{Laplacian}.}
-
-\item{stdErr}{Character; Specifying method for standard error computations.
-Options are:
-\itemize{
-\item \code{Auto-Detect} (the default),
-\item \code{Sandwich},
-\item \code{Hessian},
-\item \code{Fisher-Score},
-\item \code{None}.
+\item For models with \strong{multiple residual errors where at least one is
+log-additive}: The log-additive error(s) are treated as proportional
+during fitting, regardless of the \code{logTransform} value.
+\item For models \strong{without log-additive residual errors}: This setting is
+generally ignored by the engine concerning special log-additive handling.
 }
+Note: This function includes \code{logTransform} in the output string if it's
+not \code{NULL}. The ultimate applicability and interpretation are handled by
+the NLME engine based on the detailed model structure.}
 
-Here \code{None} means that standard error calculations are not performed. Since
-when \code{method = QRPEM} only \code{Fisher-Score} standard error type is available
-in NLME, any selected option except \code{None} will reset to \code{stdErr = "Fisher-Score"}.}
+\item{numIntegratePtsAGQ}{Integer; Number of quadrature points per dimension
+for Adaptive Gaussian Quadrature (AGQ). 1 means no AGQ. >1 enables AGQ.
+\strong{Default: \code{1L}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{isCentralDiffStdErr}{Logical; Default \code{TRUE} uses central difference
-for \code{stdErr} calculations. Set to \code{FALSE} for forward difference method.}
+\item{numIterNonParametric}{Integer; Controls non-parametric (NP)
+optimization. 0: Disable. 1: NONMEM-style NP. >1: Evolutionary NP algorithm
+generations.
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method != "Naive-Pooled"} only)}.}
 
-\item{stepSizeStdErr}{Numeric; Specifying the step size used for \code{stdErr}
-calculations.}
+\item{fastOptimization}{Logical; Use Automatic Differentiation (\code{TRUE}) or Finite
+Difference (\code{FALSE}) for optimizing random effects (etas). \strong{Default:
+\code{FALSE}}.
+\emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{numIntegratePtsAGQ}{Numeric; Specifying the number of integration
-points for adaptive Gaussian quadrature (AGQ) algorithm. Only applicable to
-models with \code{method} set to either \code{FOCE-ELS} or \code{Laplacian}.}
+\item{numIterMAPNP}{Integer; Number of preliminary Naive-Pooled iterations.
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method != "Naive-Pooled"} only)}.}
 
-\item{numIterNonParametric}{Numeric;  Specifying the number of iterations to
-perform non-parametric estimation. Only applicable when \code{method} is not set
-to \code{Naive-Pooled} (otherwise ignored).}
+\item{numRepPCWRES}{Integer; Replicates for PCWRES (max 10000). 0 disables
+calculation.
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method != "Naive-Pooled"} only)}.}
 
-\item{allowSyntheticGradient}{Logical, Set to \code{TRUE} to use synthetic
-gradient during the estimation process. Only applicable to population
-models when \code{method} is not set to \code{Naive-Pooled} (otherwise ignored).}
+\item{stepSizeLinearize}{Numeric; Relative step size for numerical
+differentiation during linearization. Must be positive. \strong{Default:
+\code{0.002}}.
+\emph{(Population models? Check NLME docs)}.}
 
-\item{numIterMAPNP}{Numeric; Specifying the number of iterations to perform
-Maximum A Posterior (MAP) initial Naive Pooling (NP) run before estimation.
-Only applicable to population models when \code{method} is not set to
-\code{Naive-Pooled} (otherwise ignored).}
+\item{numDigitLaplacian}{Integer; Optimization accuracy (NDIGIT) for the
+outer loop (\code{"FOCE-ELS"}/\code{"Laplacian"}). Positive integer. \strong{Default:
+\code{7L}}.
+\emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{numRepPCWRES}{Numeric; Specifying the number of replicates to generate
-the PCWRES after the simple estimation. Only applicable to population
-models when \code{method} is not set to \code{Naive-Pooled} (otherwise ignored).}
+\item{numDigitBlup}{Integer; Optimization accuracy (NDIGIT) for the inner
+loop (etas) or for \code{"Naive-Pooled"}. Positive integer. \strong{Default: \code{13L}}.
+\emph{(Population models or \code{method = "Naive-Pooled"})}.}
 
-\item{stepSizeLinearize}{Numeric; Specifying the step size used for numerical
-differentiation when linearizing the model function during the estimation
-process.}
+\item{gradTolOuter}{Numeric; Max gradient tolerance, outer loop.
+Non-negative.
+\strong{Default: \code{2e-4}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{numDigitLaplacian}{Numeric; Specifying the number of significant
-decimal digits for the Laplacian/ELS algorithm to use to reach convergence.}
+\item{stepTolOuter}{Numeric; Max step tolerance, outer loop. Non-negative.
+\strong{Default: \code{1e-4}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{numDigitBlup}{Numeric; Specifying the number of significant decimal
-digits for the individual estimation to use to reach convergence.}
+\item{gradTolInner}{Numeric; Max gradient tolerance, inner loop (etas).
+Non-negative.
+\strong{Default: \code{1.71e-5}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{mapAssist}{Numeric; Specifying the period used to perform MAP
-assistance (\code{mapAssist = 0} means that MAP assistance is not performed).
-Only applicable when \code{method == "QRPEM"}.}
+\item{stepTolInner}{Numeric; Max step tolerance, inner loop (etas).
+Non-negative.
+\strong{Default: \code{7.07e-8}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{iSample}{Numeric; Specifying the number of samples. Only applicable
-when \code{method == "QRPEM"}.}
+\item{refDeltaLagl}{Numeric; Log-likelihood change tolerance. Non-negative.
+\strong{Default: \code{1e-3}}. \emph{(Population models, \code{method = "FOCE-ELS"} or \code{"Laplacian"} only)}.}
 
-\item{iAcceptRatio}{Numeric; Specifying the acceptance ratio. Only applicable
-when \code{method == "QRPEM"}.}
+\item{mapAssist}{Integer; Periodicity for MAP assistance. 0 disables.
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{impDist}{Character; Specifying the distribution used for important
-sampling, and options are
-\itemize{
-\item \code{Normal} (the default),
-\item \code{DoubleExponential},
-\item \code{Direct},
-\item \code{T},
-\item \code{Mixture-2},
-\item \code{Mixture-3}.
-}
+\item{iSample}{Integer; Sample points. Positive integer.
+\strong{Default: \code{300L}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-Only applicable to the model with \code{method = "QRPEM"}.}
+\item{iAcceptRatio}{Numeric; Acceptance ratio for covariance scaling.
+Positive.
+\strong{Default: \code{0.1}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{tDOF}{Numeric; Specifying the degree of freedom (allowed value is
-between 3 and 30) for T distribution. Only applicable when \code{method =="QRPEM"}
-and \code{impDist == "T"}.}
+\item{impDist}{Character; Importance sampling distribution. Options:
+\code{"Normal"}, etc.
+\strong{Default: \code{"Normal"}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{numSampleSIR}{Numeric; Specifying the number of samples per subject
-used in the Sampling Importance Re-Sampling (SIR) algorithm to determine
-the number of SIR samples taken from the empirical discrete distribution
-that approximates the target conditional distribution. Only applicable to
-population models with \code{method = "QRPEM"}.}
+\item{tDOF}{Integer; Degrees of freedom for T distribution importance
+sampling (3-30).
+\strong{Default: \code{4L}}. \emph{(Population models, \code{method = "QRPEM"} and \code{impDist = "T"} only)}.}
 
-\item{numBurnIn}{Numeric; Specifying the number of burn-in iterations to
-perform at startup to adjust certain internal parameters. Only applicable
-to population models with \code{method = "QRPEM"}.}
+\item{numSampleSIR}{Integer; Samples per eta per subject for SIR. Positive
+integer.
+\strong{Default: \code{10L}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{freezeOmega}{Logical; Set to \code{TRUE} to freeze Omega but not Theta for
-the number of iterations specified in the \code{numBurnIn}. Only applicable to
-population models with \code{method = "QRPEM"}.}
+\item{numBurnIn}{Integer; Burn-in iterations.
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{MCPEM}{Logical; Set to \code{TRUE} to use Monte-Carlo sampling instead of
-Quasi-Random. Only applicable to population models with \code{method = "QRPEM"}.}
+\item{freezeOmega}{Logical; Freeze Omega during burn-in.
+\strong{Default: \code{FALSE}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{runAllIterations}{Logical; Set to \code{TRUE} to execute all requested
-iterations specified in \code{numIterations}. Only applicable to population
-models with \code{method = "QRPEM"}.}
+\item{MCPEM}{Logical; Use Monte-Carlo (\code{TRUE}) or Quasi-Random (\code{FALSE})
+sampling.
+\strong{Default: \code{FALSE}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-\item{scramble}{Character; Specifying the quasi-random scrambling method to
-use, and options are
-\itemize{
-\item \code{Owen} (the default),
-\item \code{Tezuka-Faur},
-\item \code{None}.
-}
+\item{runAllIterations}{Logical; Force execution of all iterations.
+\strong{Default: \code{FALSE}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
 
-Only applicable to population models with \code{method = "QRPEM"}.}
+\item{scramble}{Character; Quasi-random scrambling. Options: \code{"Owen"}, etc.
+\strong{Default: \code{"Owen"}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
+
+\item{emTolType}{Integer; QRPEM convergence check type (0-3).
+\strong{Default: \code{0L}}. \emph{(Population models, \code{method = "QRPEM"} only)}.}
+
+\item{emConvLen}{Integer; Iterations for QRPEM convergence check window.
+Positive.
+\strong{Default: \code{10L}}. \emph{(Used when \code{emTolType} > 0, QRPEM only)}.}
+
+\item{emConvCritVal}{Numeric; Critical value for QRPEM convergence check.
+Positive.
+\strong{Default: \code{5.0}}. \emph{(Used when \code{emTolType} > 0, QRPEM only)}.}
+
+\item{stepSizePartialDeriv}{Numeric; Step size for numerical partial
+derivatives. Positive.
+\strong{Default: \code{1e-5}}. \emph{(Individual models only)}.}
+
+\item{numTimeStepPartialDeriv}{Integer; Time steps for outputting partial
+derivatives. Positive integer.
+\strong{Default: \code{20L}}. \emph{(Individual models only)}.}
 }
 \value{
-Character
+A \strong{single character string} containing space-separated \code{name=value}
+pairs, ordered according to the function signature. Includes parameters if
+specified with non-default values (using method-specific defaults for
+\code{stdErr}).
 }
 \description{
-Use to define extra engine parameters for model execution.
+Defines optional engine parameters to control the estimation or simulation
+process in Phoenix NLME. This function generates a \strong{single character
+string} containing space-separated \code{name=value} pairs for non-default
+settings. Parameters are included in the output string according to the order
+in the function signature.
+}
+\details{
+This function allows customization of the NLME engine settings.
+Parameters are validated based on type, range, and applicability (detailed in
+parameter descriptions). Only parameters explicitly set to a value different
+from their default \emph{for the specified context} (e.g., method-specific
+defaults for \code{stdErr}) are included in the output string. Values are returned
+as character strings.
+
+\strong{Important Note on Defaults:} Uses fixed defaults as specified in the argument
+list for comparison \emph{unless otherwise noted} (e.g., \code{stdErr}). The actual
+default applied by NLME might differ based on model context (population vs
+individual, presence of reset info, discontinuities, BQL data).
+
+\strong{Parameter Applicability & Warnings:}
+The function checks for common cases where provided parameters might be
+ignored by the NLME engine based on the selected \code{method} or other settings.
+Warnings are issued in such cases. It assumes population context unless
+\code{method="Naive-Pooled"}.
 }
 \examples{
-# default
-EstArgs <- specify_EngineParams()
-# QRPEM method
-EstArgs <-
+# Default settings
+EstArgs_def <- specify_EngineParams()
+print(EstArgs_def)
+
+# Setting sort = TRUE
+EstArgs_sort_true <- specify_EngineParams(sort = TRUE)
+print(EstArgs_sort_true)
+
+# QRPEM method with several custom settings
+EstArgs_qrpem_str <-
   specify_EngineParams(
-    sort = TRUE,
+    sort = TRUE, # Explicitly non-default
     ODE = "DVERK",
     rtolODE = 1e-5,
-    atolODE = 1e-5,
-    maxStepsODE = 6000,
-    numIterations = 100,
+    numIterations = 500,
     method = "QRPEM",
-    numIterMAPNP = 3,
-    stdErr = "Fisher-Score",
     isCentralDiffStdErr = FALSE,
+    numIterMAPNP = 3,
     iSample = 350,
     impDist = "Mixture-2",
-    scramble = "Tezuka-Faur")
+    scramble = "Tezuka-Faur",
+    numBurnIn = 10,
+    freezeOmega = TRUE
+  )
+print(EstArgs_qrpem_str)
 
 }
 \seealso{
 \code{\link[=write_ModelTemplateTokens]{write_ModelTemplateTokens()}}, \code{\link[=specify_SimParams]{specify_SimParams()}}
 }
+\concept{Engine Specification}

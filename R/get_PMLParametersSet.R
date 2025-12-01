@@ -400,7 +400,9 @@ print.PMLModels <- function(x, ...) {
   for (ModelTextBlockIndex in seq_along(x)) {
     ModelTextBlock <- x[[ModelTextBlockIndex]]
     cat(PMLNames[ModelTextBlockIndex], "\n",
-        get_ModelText(ModelTextBlock, c()), "\n")
+        get_ModelText(PMLParametersSet = ModelTextBlock,
+                      OmegaSearchBlocksText = c(),
+                      SpaceName = PMLNames[ModelTextBlockIndex]), "\n")
   }
 }
 

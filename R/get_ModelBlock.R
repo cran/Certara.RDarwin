@@ -33,10 +33,12 @@ get_ModelBlock <- function(PMLParametersSets, OmegaSearchBlocks) {
       }
 
       if (any(is.na(match(OmegaSearchBlock, OmegaNames)))) {
-        stop(
+        warning(
           "OmegaSearchBlock should be a vector of valid Omega names, ",
           "following Omega(s) are not presented: ",
-          OmegaSearchBlock[is.na(match(OmegaSearchBlock, OmegaNames))]
+          paste(OmegaSearchBlock[is.na(match(OmegaSearchBlock, OmegaNames))],
+                collapse = ", "),
+          "\nPlease review the space # ", which(PMLParametersSet == PMLParametersSets, arr.ind = TRUE)
         )
       }
     }
@@ -97,14 +99,18 @@ get_ModelBlock <- function(PMLParametersSets, OmegaSearchBlocks) {
 
   if (length(PMLParametersSets) == 1) {
     ModelBlock <-
-      get_ModelText(PMLParametersSets[[1]], OmegaSearchBlocksText[1])
+      get_ModelText(PMLParametersSet = PMLParametersSets[[1]],
+                    OmegaSearchBlocksText = OmegaSearchBlocksText[1],
+                    SpaceName = names(PMLParametersSets)[1])
   } else {
     ModelBlocks <- c()
     for (PMLParametersSetIndex in seq_along(PMLParametersSets)) {
       PMLParametersSet <- PMLParametersSets[[PMLParametersSetIndex]]
       ModelBlocks <-
         c(ModelBlocks,
-          get_ModelText(PMLParametersSet, OmegaSearchBlocksText[PMLParametersSetIndex]))
+          get_ModelText(PMLParametersSet = PMLParametersSet,
+                        OmegaSearchBlocksText = OmegaSearchBlocksText[PMLParametersSetIndex],
+                        SpaceName = names(PMLParametersSets)[PMLParametersSetIndex]))
     }
 
     ModelBlock <-
